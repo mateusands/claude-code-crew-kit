@@ -57,6 +57,7 @@ update" changes an outcome.
 ├── SECURITY.md.template        # vulnerability disclosure policy (public repos)
 ├── settings.json               # default permissions (allow reads, deny the irreversible)
 ├── settings.local.json.example # what stays on your machine, outside git
+├── .gitignore                  # local settings and expiring plans, kept out of git
 ├── mcp/                        # MCP servers, one folder each (playwright · agy · copilot · codex · shadcn)
 ├── agents/                     # 5 subagents
 ├── commands/                   # 4 commands that stitch the skills together
@@ -251,3 +252,9 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 | `{{APPROVED_VENDORS}}` | third parties already approved | `AWS, OpenAI` |
 | `{{INCIDENT_DEADLINE}}` | incident notification deadline | `24h` · `immediately` |
 | `{{CRITICAL_ASSET}}` | what breaks expensively (a ledger, a user's file…) | `user files` |
+
+---
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).

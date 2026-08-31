@@ -1,0 +1,23 @@
+# Personal Claude Code settings — never versioned (see settings.local.json.example)
+.claude/settings.local.json
+settings.local.json
+
+# Plans are scaffolding: 7-day retention, cleared by start-session.
+# .crew/hardenings/, techstack.md and operations.md stay versioned on purpose.
+.crew/plans-local/
+
+# MCP servers that need an absolute path to server.mjs are machine-specific
+.mcp.local.json
+
+# Node — only present if a wrapper server grows dependencies
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
