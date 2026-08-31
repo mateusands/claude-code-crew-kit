@@ -5,6 +5,10 @@ description: Closes the working session — writes the permanent hardening repor
 
 # Session close
 
+- **Can:** write the permanent hardening report and update `{{SOURCE_OF_TRUTH}}` and the `{{RECORDS_DIR}}` memory files.
+- **Must:** record the traps paid for, run the final validation, and say what was left out and what is still uncommitted.
+- **Cannot:** commit or push without an order, and cannot delete anything under `hardenings/`.
+
 The goal right now is **not to code**, but to consolidate what the session changed. A session that ends
 with no record forces the next one to rediscover everything.
 
@@ -19,7 +23,14 @@ with no record forces the next one to rediscover everything.
 > head: it is the only artifact that outlives the plan.
 - Required content:
   - **What was done** — per change, one sentence with the effect (not the file name).
-  - **Non-obvious technical decisions** — and the **why**. It is the most valuable content in the report.
+  - **Non-obvious technical decisions** — and the **why**. It is the most valuable content in the
+    report. Each one should already have been written **when it was made**, by whoever made it
+    (`AGENTS.md`), which makes this step consolidation rather than reconstruction. If a decision is
+    reaching this file only from memory, **say so** — a reconstructed "why" reads exactly like a
+    recorded one, and is not the same thing.
+  - **Deviations** — anything still `OPEN` or `ADDRESSED` under a plan's `## Deviations`. Carry the
+    fact here and mark it `INCORPORATED` there. `plans-local/` expires after 7 days; this file does
+    not, so a deviation that never makes the trip is simply lost.
   - **Validation** — what the suite covered **and**, separately, what you exercised by hand, with what
     data. "The tests pass" never does the job of both.
   - **Loose ends** — explicit enough to resume without context.

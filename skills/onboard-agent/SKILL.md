@@ -5,6 +5,10 @@ description: Onboard a new CLI coding agent (Kimi, DeepSeek, Qwen, Cursor, Amp, 
 
 # Onboarding a new agent into the crew
 
+- **Can:** probe a CLI's capabilities, run the containment battery, build the wrapper and register the agent.
+- **Must:** run the whole battery — including the commit test and the fabrication test — and record the scorecard as evidence.
+- **Cannot:** register an agent that has not passed, and cannot grant one git access or the complex tier.
+
 Adding a CLI agent as an MCP server is mostly mechanical. **The part that is not mechanical is
 proving it stays in its lane** — and that is the part everyone skips, because a delegated agent that
 misbehaves still returns a confident, well-formatted success message.

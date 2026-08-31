@@ -5,6 +5,10 @@ description: Visual craft review of UI changes — hierarchy, typography, color,
 
 # Design Review — the visual craft of UI changes
 
+- **Can:** open the screen and judge hierarchy, type, color, depth, states and motion; assign severity.
+- **Must:** identify the register first, look at the whole before the detail, run each lens in isolation, and filter your own false positives.
+- **Cannot:** restyle the code or change the design system — it reports, the author decides.
+
 `codereview` answers *"is this secure, sound and sustainable?"*. **This one answers a different
 question: "did someone decide this, or did it come out on autopilot?"** — generated UI tends to be
 *correct* and *unconsidered*: flat hierarchy, looks like every other dashboard.

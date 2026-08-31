@@ -5,6 +5,10 @@ description: Full-repository security audit — sweeps entire classes of problem
 
 # Complete security review — the whole repository
 
+- **Can:** sweep the whole repository, read any file, and run your host's own security reviewer.
+- **Must:** state coverage as numbers with their denominators, classify by exploitability, and name what you did not audit.
+- **Cannot:** fix what it finds without an explicit order, or present a sample as if it were a sweep.
+
 `codereview` judges **what changed**. This judges **what is there** — including everything that was
 never reviewed because it landed before anyone was looking.
 

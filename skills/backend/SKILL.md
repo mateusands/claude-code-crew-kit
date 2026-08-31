@@ -5,6 +5,10 @@ description: Server conventions — layers and where each rule lives, input vali
 
 # Backend — server conventions
 
+- **Can:** write server code for an already-approved plan; research the library's docs for the exact version in use.
+- **Must:** keep each rule in its own layer, validate input with an allowlist, route every error through the one path, and show the suite green.
+- **Cannot:** invent an API from memory when the version is uncertain, or leave the same rule implemented in two layers.
+
 A guide for **any** server change. It applies alongside `{{SOURCE_OF_TRUTH}}`: TDD, map the impact
 first, warn before degrading anything, **no commit/push without an order**.
 

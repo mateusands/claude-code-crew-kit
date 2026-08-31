@@ -5,6 +5,10 @@ description: Adversarial review of a plan written by ANOTHER agent, before any c
 
 # Plan review — the second planner
 
+- **Can:** challenge every assumption in a plan written by another agent, and return a verdict.
+- **Must:** refuse if you wrote the plan, verify for yourself what you can, and declare what you did not check.
+- **Cannot:** rewrite the plan — it reports back to the author — and cannot write code.
+
 `plan` decides what to do. `codereview` judges finished code. **This sits between them**, and it is
 the cheapest review in the whole chain: a finding here costs a paragraph, the same finding after
 implementation costs the implementation.

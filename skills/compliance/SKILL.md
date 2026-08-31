@@ -5,6 +5,10 @@ description: Compliance gate — personal data, dependency licenses, new externa
 
 # Compliance — the gate that runs before the code, not after
 
+- **Can:** block a change and require written authorization from `{{OWNER}}`.
+- **Must:** answer the three questions for every new personal-data field, check the license of every new dependency, and end with a verdict and its stopping point.
+- **Cannot:** clear a third party outside `{{APPROVED_VENDORS}}` on its own authority.
+
 This gate is **conditional on the CONTENT of the diff, not on your judgment**. When in doubt, run it.
 **When genuinely in doubt, STOP and tell `{{OWNER}}`.**
 

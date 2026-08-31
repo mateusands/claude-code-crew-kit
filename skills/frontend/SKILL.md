@@ -5,6 +5,10 @@ description: Interface conventions — which design system to use, where types a
 
 # Frontend — interface conventions
 
+- **Can:** write UI code for an already-approved plan; research the library's docs for the exact version in use.
+- **Must:** reuse the project's own design system, cover loading/empty/error on every data panel, and open it in the browser after the suite is green.
+- **Cannot:** introduce a second design system or a parallel source of types, or call it done on a green suite alone.
+
 A guide for any UI change. It applies alongside `{{SOURCE_OF_TRUTH}}` — do not refactor without need,
 do not assume a field without checking the server, permissions always revalidated on the server.
 

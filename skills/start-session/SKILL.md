@@ -5,6 +5,10 @@ description: Initializes the working session — reads the project's source of t
 
 # Session start
 
+- **Can:** read the source of truth, the `{{RECORDS_DIR}}` memory and the real git state; create the memory files if they are missing; expire plans past their 7 days.
+- **Must:** read `info.md` fresh rather than from memory, state the mode it declares, and confirm scope and the active gates before any code.
+- **Cannot:** touch product code — the session opens READ-ONLY — and cannot delete anything under `hardenings/`.
+
 The goal right now is **not to code**: it is to load context and confirm we are in the right scope.
 Wrong context at the start costs the whole session.
 

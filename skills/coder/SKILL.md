@@ -5,6 +5,10 @@ description: Execution of an approved plan — the discipline of the ACT of writ
 
 # Coder — the act of writing the code
 
+- **Can:** write product code, for an already-approved plan only.
+- **Must:** run the pre-flight and the twin protocol, show Red before Green, and self-review your own diff before saying done.
+- **Cannot:** plan, and cannot keep going once an assumption falls — it stops and reports. No commit or push without an order.
+
 `plan` decides **what** to do. `codereview` judges **what came out**. This skill governs the
 **middle**: the hours when the code is written, where neither of the other two is watching.
 
@@ -134,6 +138,29 @@ Stop triggers:
 
 **Stopping early costs one message. Continuing wrong costs the whole implementation.**
 
+### Record the divergence — whether or not you stopped
+
+A **deviation** is the implementation materially differing from the approved plan. Departing from a
+detail the plan marked flexible is not one; everything else is. The stop rule above decides whether
+you keep going — this decides what gets written down, and it applies either way.
+
+Write it in the plan file under `## Deviations`, **at the moment you diverge**, never at the end from
+memory:
+
+| State | What it means |
+|---|---|
+| `OPEN` | written the moment you diverged: what the plan expected, what the code actually required, why you chose this |
+| `ADDRESSED` | whoever owns that gate in `info.md` has accepted it, rejected it, or sent the plan back |
+| `INCORPORATED` | the fact now lives in the code, the updated plan, or the hardening — the row has done its job and can go |
+
+🔴 **Get to `INCORPORATED` before the plan expires.** `{{RECORDS_DIR}}/plans-local/` is deleted after 7
+days. A deviation still sitting at `OPEN` when that happens is knowledge that was written down and
+then thrown away.
+
+Why this section exists: without a row, `codereview` opens a diff that does not match the approved
+plan and has no way to tell a deliberate decision from a slip. It then does one of two things, both
+bad — flags your good call as a defect, or waves a real one through.
+
 ---
 
 ## 5. Before saying "done" — self-review of your own diff
@@ -147,6 +174,8 @@ Stop triggers:
 - [ ] **Schema applied** before exercising?
 - [ ] **Gates** run where applicable
 - [ ] **Runtime**: I actually exercised it — not just "looks right reading the diff"
+- [ ] **Deviations**: every departure from the approved plan has a row (§ 4), and every decision worth
+      remembering was written when I made it — not left for `end-session` to reconstruct
 
 ⚠️ **A green suite proves the contract, not real runtime behavior.** Browser code has to be opened in
 a browser; container code has to run in a container. In the report, say the two things

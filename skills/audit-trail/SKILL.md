@@ -5,6 +5,10 @@ description: Audit trail gate — every action by a person or automated job that
 
 # Audit trail — no action without a trace
 
+- **Can:** read the diff, the models and every write path; hold a feature back until its trail exists.
+- **Must:** decide best-effort *or* mandatory explicitly, and name which actions you checked.
+- **Cannot:** accept "this one needs no trail" without the reason written down.
+
 **Every feature with an action performed by someone — user, manager, admin, or automated job — must
 appear in the trail, with date, time and what was done.** This is the gate that ensures it while the
 code is being written, not after someone asked "who changed this?".

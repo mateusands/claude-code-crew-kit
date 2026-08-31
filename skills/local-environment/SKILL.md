@@ -5,6 +5,10 @@ description: Bring up, seed and drive the local development environment — inst
 
 # Local environment — bring it up, seed it, drive it
 
+- **Can:** install, seed, bring up and drive the local environment, and stand in for external services.
+- **Must:** use the project's documented commands and keep every secret out of git.
+- **Cannot:** commit a filled-in `.env`, or point a local process at a production resource.
+
 This skill covers **getting it running**. Proving the change works is the `local-testing` skill.
 
 ## 1. Installation

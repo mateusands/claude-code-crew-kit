@@ -5,6 +5,10 @@ description: Database changes — the real shape of the schema, the "did it get 
 
 # Schema — database changes without breaking the deploy
 
+- **Can:** create and alter tables, columns and indexes, for an already-approved plan.
+- **Must:** establish the real shape of the schema first, keep the deploy working with the old code still live, and register the migration where this project expects it.
+- **Cannot:** drop or rename in a single step. No commit or push without an order.
+
 ## 1. What is the REAL shape of the schema?
 
 Two models, and each one's gotcha:

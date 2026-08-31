@@ -5,6 +5,10 @@ description: Planning a fix/feature BEFORE writing code — the mirror skill of 
 
 # Plan — before the first line of code
 
+- **Can:** read anything, grep the blast radius, and ask the blocking questions — each with a default.
+- **Must:** declare assumptions that can be falsified, run the gates now rather than after coding, write the test plan before the code plan, and then STOP.
+- **Cannot:** write product code.
+
 `codereview` judges finished code. This skill is the **same discipline at the start**: finding out
 what the change really touches **before** a diff exists. A review finding costs one correction; a
 planning error costs the entire implementation.
@@ -73,6 +77,11 @@ Every plan opens with these three blocks, in this order:
    | Environment | where this actually runs (browser, container, user's machine) |
    | Scope | what you **deliberately will not** do, and what stays as a TODO |
    | Test | what will have tests and what will stay uncovered |
+
+4. **Which details are binding, and which are flexible.** Mark the flexible ones in the plan itself;
+   everything unmarked is binding. This is what makes a deviation detectable later: `coder` departing
+   from a binding detail has to record it, and departing from a flexible one does not. Pseudocode is
+   always guidance — writing it differently is not a deviation; the *approach* turning out wrong is.
 
 **Then stop. Do not start implementing.**
 
@@ -232,6 +241,7 @@ chosen shape (delete/change/add/rewrite) + the explicit boundary
 ## Test — SDD → BDD → TDD (which fails first, in which file)
 ## Validation (L1/L2/L3) — and **what will NOT be validated**
 ## Risk · rollback · rollout order
+## Deviations — empty at plan time; `coder` fills it (OPEN → ADDRESSED → INCORPORATED)
 ## Verdict
 ```
 

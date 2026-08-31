@@ -5,6 +5,10 @@ description: Tiered validation (L1 suite+build · L2 the production artifact ope
 
 # Local testing — prove it at runtime, not in the suite
 
+- **Can:** run the suite, the build, the shipped artifact and the real flow — L1 through L4.
+- **Must:** compute the expected value *before* looking at the screen, and declare the level you actually reached.
+- **Cannot:** treat a green suite as proof, or edit the implementation to make a check pass.
+
 **A green suite is not proof that it works.** The test runs in one environment; the product runs in
 another.
 

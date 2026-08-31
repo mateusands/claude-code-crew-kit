@@ -52,6 +52,21 @@ and found nothing" and "I did not run `compliance`" are different sentences, and
 a gate. Declaring a skill you skipped is honest; skipping it silently is how the discipline erodes
 one small change at a time.
 
+### Open the skill file every time — do not run it from memory
+
+Running a skill means **opening its `SKILL.md` and reading it**, on that invocation, including the
+tenth time you run it in a week. Being sure you remember the procedure is not evidence that the file
+still says what you remember — the file gets specialized for this project, and it changes.
+
+This failure leaves nothing behind to notice: an agent works from a half-remembered version, a step
+quietly does not happen, and the gap surfaces later or never. It has been measured in another kit —
+in [LAAW](https://github.com/vitoremanuellds/LAAW), a skill carried its own condensed copy of the
+rules so agents could skip the reread, and an agent invented a status value that did not exist in the
+closed list, because what it worked from was a summary rather than the rule. The shortcut was
+deleted.
+
+Same discipline as `{{RECORDS_DIR}}/info.md` above, for the same reason.
+
 ### Delegated executors do not choose
 
 `agy` and `copilot` have no skill system. They read the skill files you name in the `skills`
@@ -224,6 +239,13 @@ every agent regardless of role:
   hashes. "I could not run this" is always a better answer than a plausible fiction.
 - **Stop when an assumption falls.** Stopping early costs one message; continuing wrong costs the
   implementation.
+- **A decision gets written when it is made, by whoever made it** — appended to today's
+  `{{RECORDS_DIR}}/hardenings/` file at that moment, not left for `end-session` to reconstruct at the
+  end. **Review never writes one:** a reviewer who finds an undocumented decision flags it back to the
+  agent that made it, because a record of what a reviewer inferred gets read later as what was decided.
+- **A divergence from an approved plan gets recorded before you continue** — under `## Deviations` in
+  the plan file, `OPEN → ADDRESSED → INCORPORATED`. Departing from a detail the plan marked flexible
+  is not a deviation; everything else is.
 
 ## Commit convention
 

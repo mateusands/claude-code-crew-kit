@@ -20,16 +20,25 @@ requires you to *say so* rather than let a report imply a second opinion that ne
 
 ## To begin
 
-Copy this kit into the project, then **ask the LLM to read `START.md`**:
+Run the installer against the project, then **ask the LLM to read `START.md`**:
 
 ```bash
-cp -r skills agents commands workflows settings.json /path/to/repo/.claude/
-cp crew-info.md.template /path/to/repo/.claude/   # start-session reads it from there
-cp AGENTS.md.template /path/to/repo/AGENTS.md
-cp CLAUDE.md.template /path/to/repo/CLAUDE.md
-cp SECURITY.md.template /path/to/repo/SECURITY.md # public repos only
-cp -r START.md mcp /path/to/repo/          # mcp/.mcp.json goes to the project root
+git clone https://github.com/mateusands/claude-code-crew-kit.git
+./claude-code-crew-kit/install.sh /path/to/repo
 ```
+
+It fills `.claude/` with the skills, subagents, commands, workflows and default permissions, puts
+`AGENTS.md`, `CLAUDE.md`, `START.md` and `mcp/` at the project root — never overwriting a file that
+is already there — and writes **`.claude/crewwatch-version`**: the source, the tag, the commit and
+the date.
+
+That stamp exists because the kit is meant to be **specialized in place** (`START.md` Step 4). Once
+you have rewritten the skills for your project, it is the only record of what you started from. For
+the same reason `install.sh` refuses to run twice over the same project: a re-sync would overwrite
+the specialization that gives the kit its value. To adopt upstream changes, diff them against your
+stamped commit and port what you want.
+
+`SECURITY.md.template` is deliberately not installed — copy it yourself if the repo is public.
 
 Then, in the project:
 
@@ -55,6 +64,7 @@ update" changes an outcome.
 ├── CLAUDE.md.template          # thin — imports AGENTS.md, plus Claude-only notes
 ├── crew-info.md.template       # the mode and the roster → .crew/info.md
 ├── SECURITY.md.template        # vulnerability disclosure policy (public repos)
+├── install.sh                  # installs the kit into a project, and stamps the version
 ├── settings.json               # default permissions (allow reads, deny the irreversible)
 ├── settings.local.json.example # what stays on your machine, outside git
 ├── .gitignore                  # local settings and expiring plans, kept out of git
@@ -160,6 +170,18 @@ start-session ──► plan ──► plan-review ──► [owner's OK] ──
 The rule that cuts across all of them: **`plan` and `codereview` do not write product code**; `coder`
 does; none of them commits or pushes without an explicit order.
 
+### Name the skill when you ask for the work
+
+Nothing fires these automatically. *"Use `plan` for this"* gets you the skill; *"can you plan this
+out?"* gets you an agent improvising something plan-shaped, with the gates and the twin protocol left
+out. Say the name.
+
+This is the most common way the discipline quietly fails to happen, and it is not a guess — it is
+what [LAAW](https://github.com/vitoremanuellds/LAAW) recorded as the single most frequent failure
+point in its own testing, on a kit built on the same assumption. The same holds for delegated work:
+`agy` and `copilot` have no skill system at all, so the orchestrator names the skill files on every
+call.
+
 ### Who does what, when other agents are in play
 
 With the MCP servers configured, Claude stays the orchestrator and delegates narrowly:
@@ -254,6 +276,15 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 | `{{CRITICAL_ASSET}}` | what breaks expensively (a ledger, a user's file…) | `user files` |
 
 ---
+
+## Credits
+
+Four things here came from [LAAW](https://github.com/vitoremanuellds/LAAW) by
+[@vitoremanuellds](https://github.com/vitoremanuellds), a file-based agent workflow built for local
+models on small context windows: the re-read discipline in `AGENTS.md` (open the skill file every
+time, never run it from memory), the per-skill **Can / Must / Cannot** contract, the deviation
+lifecycle `OPEN → ADDRESSED → INCORPORATED`, and the rule that whoever decides writes the record
+while review only flags its absence. The ideas are his; the wording here is ours.
 
 ## License
 

@@ -5,6 +5,10 @@ description: Senior code review of the repository's latest changes (working tree
 
 # Senior Code Review — latest changes
 
+- **Can:** read the diff, the code around it and the intent; classify by severity; run your host's reviewer as a second pass.
+- **Must:** refuse the review if you wrote the code, confirm every `file:line` by opening the file, end with a verdict and state what you did not cover.
+- **Cannot:** apply fixes without an explicit order, or report a finding you could not confirm in the file.
+
 Act as a Senior Software Engineer and Solutions Architect. Critical, in-depth review of the
 **latest changes in this repository**.
 
@@ -72,6 +76,16 @@ what `{{OWNER}}` asked for. One minute here.
 A reviewer who does not know the intent becomes a noise generator: complains about a deliberate
 decision, misses the requirement the code fails to meet, and anchors everything on style preference.
 If the intent is nowhere to be found, **ask** — do not guess.
+
+**If the change had a plan, read its `## Deviations` section too.** That is where the author states
+where the implementation left the approved plan, and why. A divergence you can see in the diff with
+**no row there** is itself a finding: the deviation went unrecorded, and nobody downstream can tell a
+decision from a slip.
+
+🔴 **This skill never writes the decision record.** If the diff contains a decision that future work
+needs to know and nothing records it, flag it back to the agent that made it — the one who decided
+writes it, at the moment of deciding. A reviewer who writes it up instead produces a record of what
+they *inferred*, and it gets read afterwards as what was actually decided.
 
 ## How to identify what to review (in this order)
 
