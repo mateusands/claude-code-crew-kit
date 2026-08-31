@@ -1,8 +1,8 @@
 # CrewWatch
 
-A ready-made `.claude/` package for starting a new repository — or for adopting one already in
-flight. Skills, subagents, commands, workflows and MCP servers, so the AI setup is done before the
-work starts.
+A ready-made `.claude/` package for **Claude Code** — for starting a new repository, or for adopting
+one already in flight. Skills, subagents, slash commands, workflows and MCP servers, so the AI setup
+is done before the work starts.
 
 **The crew:** Claude and Codex take the complex work, planning and review; `agy` and `copilot` take
 small, low-risk tasks.
