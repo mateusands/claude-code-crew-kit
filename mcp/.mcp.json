@@ -24,6 +24,13 @@
       "args": [
         "/absolute/path/to/.claude/mcp/copilot/server.mjs"
       ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@4.0.4"
+      ]
     }
   }
 }

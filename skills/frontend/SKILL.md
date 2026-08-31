@@ -21,6 +21,11 @@ The stack is **version-specific** — do not assume the newest. ⚠️ And it ca
 the docs for the exact version and **cite the source** before using a prop or option you do not know
 cold.
 
+If the `context7` MCP server is configured, ask it for the pinned version instead of searching — a
+search answers for the newest release, which is the trap this step exists to avoid. It is
+authoritative about the library, never about this project: the design system, the types and the data
+still get verified in the code below.
+
 ---
 
 ## 1. Which design system to use — the rule without guessing

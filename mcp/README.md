@@ -4,7 +4,7 @@ One folder per server, each with its own `.mcp.json` and README. Copy the ones y
 project root, or use the combined [`.mcp.json`](.mcp.json) here and delete what you do not need.
 
 ```bash
-cp mcp/.mcp.json /path/to/repo/.mcp.json     # playwright + agy + codex + copilot
+cp mcp/.mcp.json /path/to/repo/.mcp.json     # playwright + agy + codex + copilot + context7
 # or just one:
 cp mcp/playwright/.mcp.json /path/to/repo/.mcp.json
 ```
@@ -25,6 +25,7 @@ plumbing.
 | **agy** | [`agy/`](agy/) | delegated executor for small, low-risk tasks | `agy` on PATH, Node 18+ |
 | **codex** | [`codex/`](codex/) | second reviewer / second opinion | `codex` on PATH, signed in |
 | **copilot** | [`copilot/`](copilot/) | second executor for delegated writes | `copilot` on PATH, signed in, Node 18+ |
+| **context7** | [`context7/`](context7/) | version-accurate library docs for `backend`/`frontend` Step 0 | `npx` |
 | **shadcn** | [`shadcn/`](shadcn/) | component registry access — **only if the project has `components.json`** | `npx` |
 
 ---
@@ -120,7 +121,6 @@ before adding it** — MCP package names move around.
 
 | Server | Add it when | Pairs with |
 |---|---|---|
-| **Context7** | the stack is version-specific and agents keep guessing library APIs | `backend` / `frontend` Step 0 |
 | **A private component registry** | your team publishes its own design system | `frontend` "reuse, do not duplicate" — see [`shadcn/`](shadcn/) |
 | **Chrome DevTools** | you need performance traces or deeper network inspection | `local-testing` L3/L4 |
 | **A database server** | an agent needs to read the live schema and query real data | `schema`, `local-environment` |
@@ -135,3 +135,20 @@ before adding it** — MCP package names move around.
   for a duplicate.
 - **Anything that sends code or data to a third party** — that is the `compliance` gate: outside
   `{{APPROVED_VENDORS}}` it needs prior written authorization.
+
+## What every server costs you, beyond context
+
+Three surfaces come with each one, and they are the reason this list stays short:
+
+1. **Whatever it returns is text the model can act on** — docs, issue bodies, database rows, error
+   payloads. In April 2026 instructions hidden in **GitHub PR titles** drove coding agents to exfiltrate
+   CI secrets and post them back as PR comments. Treat retrieved content as evidence, never as
+   instruction.
+2. **The tool descriptions are model input too.** A server can look ordinary at install and poison its
+   own descriptions later — including to reach data belonging to *other* servers in the same session.
+3. **`@latest` resolves at run time.** Whatever is published upstream today runs against this
+   repository tonight. Pin the version of anything that injects text into a session.
+
+None of this makes a server unusable; it makes the roster a decision. The kit's own defences — human
+in the loop at every gate, executors with no git, delegated diffs verified against a git snapshot —
+are what keep the blast radius small when one of these does misbehave.

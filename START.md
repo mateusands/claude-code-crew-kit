@@ -205,6 +205,7 @@ project root as `.mcp.json`.
 | **agy** | there will be small, repetitive, low-risk work to delegate | it executes bounded tasks under a charter and a git audit |
 | **codex** | you want a second, independent review pass | `codereview` Step −1 asks for one |
 | **copilot** | you want a second executor beside `agy` | prefer `agy` first — see [`mcp/copilot/README.md`](mcp/copilot/README.md) on why it is the least trusted |
+| **context7** | the stack pins versions and agents keep guessing library APIs | it answers `backend`/`frontend` Step 0 for the pinned version; the API key goes in the human's user config, never in `.mcp.json` |
 | **shadcn** | 🔴 **only if `components.json` exists** in the project | on any other UI stack it costs context and tempts agents away from the project's own primitives |
 
 **Do not install servers "just in case"** — every one costs context on every session.

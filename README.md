@@ -68,7 +68,7 @@ update" changes an outcome.
 ├── settings.json               # default permissions (allow reads, deny the irreversible)
 ├── settings.local.json.example # what stays on your machine, outside git
 ├── .gitignore                  # local settings and expiring plans, kept out of git
-├── mcp/                        # MCP servers, one folder each (playwright · agy · copilot · codex · shadcn)
+├── mcp/                        # MCP servers, one folder each (playwright · agy · copilot · codex · context7 · shadcn)
 ├── agents/                     # 5 subagents
 ├── commands/                   # 4 commands that stitch the skills together
 ├── workflows/                  # role policy + multi-agent orchestration

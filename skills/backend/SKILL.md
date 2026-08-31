@@ -19,6 +19,11 @@ manifest (not the newest one) and **cite the source**. A major version changes b
 body parser that starts returning empty, an import that moved, an error code that left the message and
 moved to the cause. It is the cheapest source of an expensive bug.
 
+If the `context7` MCP server is configured, it answers **for the version you pin** rather than for
+whatever ranks best in a search — that is exactly what this step asks for. What it returns is
+evidence about the library and nothing more: rule 1 below still stands, and your own routes, tables
+and columns get verified in this repository.
+
 ---
 
 ## Non-negotiable rules
