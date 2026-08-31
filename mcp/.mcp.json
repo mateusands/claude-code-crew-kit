@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest"
+      ]
+    },
+    "agy": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/.claude/mcp/agy/server.mjs"
+      ]
+    },
+    "codex": {
+      "command": "codex",
+      "args": [
+        "mcp-server"
+      ]
+    },
+    "copilot": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/.claude/mcp/copilot/server.mjs"
+      ]
+    }
+  }
+}

@@ -1,0 +1,108 @@
+# `.crew/info.md` — who is in the crew, and who decides
+
+> Copy this to `{{RECORDS_DIR}}/info.md` and fill it in. **Every agent reads this file fresh at the
+> start of a session and again at every gate** — never from memory of an earlier read. It is the one
+> place that says who is available, who decides, and what happens when someone is missing.
+>
+> Separating this from the skills is deliberate: the skills describe **the process**, this file
+> describes **the authority**. That way you can change how much you delegate without editing a
+> single skill.
+
+---
+
+## Mode
+
+```
+MODE: solo
+```
+
+Pick one. This single line changes what the process expects of you.
+
+| Mode | Meaning | Use it when |
+|---|---|---|
+| **solo** | One agent does everything: plan, implement, review, validate | you only have one CLI agent, or you want simplicity over cross-checking |
+| **duo** | Two complex agents. They plan/review each other's work. No delegated executors | you have Claude and Codex, but no `agy`/`copilot`, or you do not want delegation |
+| **crew** | Full setup: two complex agents plus low-risk executors | everything is configured and the work has enough volume to delegate |
+
+## Roster
+
+Fill in only what exists. `(none)` is a valid, honest answer.
+
+```
+ORCHESTRATOR:   claude
+SECOND COMPLEX: (none)
+EXECUTORS:      (none)
+BROWSER:        (none)
+```
+
+| Slot | What it is | Typical |
+|---|---|---|
+| `ORCHESTRATOR` | talks to the human, plans, splits, owns git | `claude` or `codex` |
+| `SECOND COMPLEX` | reviews the orchestrator's plans and code | the other one |
+| `EXECUTORS` | low-risk delegated work | `agy`, `copilot` |
+| `BROWSER` | the Playwright MCP, for design review and runtime validation | `playwright` |
+
+---
+
+## 🔴 What `solo` mode changes — read this before assuming a review happened
+
+In `solo`, **cross-review does not exist.** The kit's default policy is that nobody reviews their own
+work, and in solo mode that policy cannot be satisfied by a second agent. Pretending otherwise is
+worse than not having it, so the rules become:
+
+| Normally | In solo |
+|---|---|
+| The other agent reviews the plan (`plan-review`) | **You review your own plan** — but on a separate pass, after writing it out in full, and you **declare in the verdict that it was a self-review** |
+| The other agent reviews the code (`codereview`) | You review your own diff, **and you run your host's independent reviewers** — for Claude that means `/code-review` **and** `/security-review`. Those are not the same lens as yours, and in solo they are the only second opinion that exists |
+| Delegated executors do the small work | You do all of it. Do not delegate to an executor that is not in the roster |
+| `/execute-plan` fans out `implementer` agents | Still available — subagents of the same model are a weaker check than a different model, but they are a real one |
+
+**In every solo report, state the mode.** A reader who does not know it was solo will assume a second
+agent signed off, and that assumption is exactly how an unreviewed change ships with the appearance
+of having been reviewed.
+
+### What `duo` changes
+
+Everything about review works normally. Delegation does not exist: every task is done by a complex
+agent. Skip the `agy`/`copilot` sections of `mcp/README.md` entirely.
+
+---
+
+## Gates — who decides what
+
+The process is the same in every mode; **the authority is what you set here.** Change these as trust
+grows, without touching a skill.
+
+| Gate | Authority | Notes |
+|---|---|---|
+| Plan approval | **human** | never delegate this by default |
+| Starting to code | human | after the plan is approved |
+| Routing to a low-risk executor | orchestrator | the human sees it in the report |
+| Accepting a delegated diff | orchestrator | after reading the diff, not the report |
+| Release verdict (🟢/🟡/🔴) | orchestrator | the human decides what to do with it |
+| **`git commit`** | **human orders it, orchestrator runs it** | 🔴 never an executor, in any mode |
+| **`git push`** | **human orders it explicitly** | 🔴 an order to commit is not an order to push |
+| Adding a dependency | **human** | the licence gate must run first (`compliance`) |
+| Touching `{{RED_ZONE}}` / `{{CRITICAL_ASSET}}` | **human** | written authorization, before the work |
+| Sending data to a new external service | **human, in writing** | see `compliance` |
+| Registering a new agent | **human** | after the `onboard-agent` battery; the human picks the role |
+
+## Models in use
+
+Record what is actually configured, so a report can say which model produced what.
+
+```
+claude:   claude-opus-5, effort high
+codex:    gpt-5.6-sol, reasoning effort high
+agy:      gemini-3.7-flash-high
+copilot:  (default — best available)
+```
+
+---
+
+## Reread discipline
+
+🔴 **Read this file again at every gate, not once at the start.** A session can run for hours; the
+mode or the roster can change mid-session (an agent stops responding, the human restricts something).
+An agent acting on a remembered policy is acting on a policy that may no longer be true — and it will
+do so confidently.

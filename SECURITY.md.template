@@ -1,0 +1,72 @@
+# Security Policy — {{PROJECT}}
+
+> **What this file is for, so it does not get filled with the wrong thing.**
+>
+> `SECURITY.md` is a **public contact channel**: it tells someone who finds a vulnerability how to
+> report it privately instead of opening a public issue. GitHub surfaces it in the Security tab and
+> links it from the "Report a vulnerability" flow.
+>
+> It is **not** where your security rules for development live. Those belong in:
+> - `AGENTS.md` → `{{SENSITIVE_DATA}}`, `{{RED_ZONE}}`, `{{APPROVED_VENDORS}}`
+> - `.claude/skills/compliance/` → the gate that runs before code
+> - `.claude/skills/complete-security-review/` → the audit procedure
+>
+> **Worth having when** the repo is public, or private but with contributors outside your team.
+> **Skip it** on a solo private repo — an unread file that promises a response time you do not honour
+> is worse than no file. Delete this whole comment block before publishing.
+
+## Reporting a vulnerability
+
+**Do not open a public issue for a security problem.** A public report is a disclosure, and it
+reaches attackers at the same time it reaches us.
+
+Report privately via:
+
+- **GitHub Security Advisories** — the "Report a vulnerability" button in this repository's Security
+  tab (preferred: it gives us a private thread with you)
+- **Email:** `<security@yourdomain>`
+
+Please include, as far as you can:
+
+1. what the issue is and where (file, endpoint, or URL);
+2. steps to reproduce, or a proof of concept;
+3. what an attacker gains — data read, data written, access escalated;
+4. who can trigger it: anyone, any authenticated user, or only a privileged account.
+
+## What to expect
+
+| Stage | Target |
+|---|---|
+| Acknowledgement | within `{{INCIDENT_DEADLINE}}` |
+| Initial assessment | <X business days> |
+| Fix or mitigation plan | <depends on severity — state your real target> |
+
+⚠️ Put times here you will actually meet. A missed promise in this file is read as neglect, and it is
+the first thing a reporter quotes when they go public.
+
+We will keep you updated, and we will tell you when the issue is fixed. If you would like credit in
+the advisory, say so and we will name you.
+
+## Scope
+
+**In scope:** <the application, its API, its infrastructure — be specific>
+
+**Out of scope:**
+
+- findings from automated scanners with no demonstrated impact
+- social engineering of the team, or physical attacks
+- vulnerabilities in third-party services we do not control
+- <anything else that genuinely does not apply>
+
+## Safe harbour
+
+We will not pursue or support legal action against anyone who reports a vulnerability in good faith,
+follows this policy, avoids privacy violations and service disruption, and gives us reasonable time
+to fix the issue before disclosing it publicly.
+
+## Supported versions
+
+| Version | Supported |
+|---|---|
+| `{{PROD_BRANCH}}` / latest | ✅ |
+| older | ❌ |

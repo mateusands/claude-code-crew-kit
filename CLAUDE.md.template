@@ -1,0 +1,22 @@
+# CLAUDE.md — {{PROJECT}}
+
+> The rules for this repository are shared by every agent and live in **`AGENTS.md`**, imported
+> below. Keeping one copy is deliberate: two files describing the same project drift apart, and the
+> stale one gets believed.
+
+@AGENTS.md
+
+---
+
+## Claude-specific notes
+
+Anything below applies **only** to Claude Code. If a rule applies to every agent, it belongs in
+`AGENTS.md` instead.
+
+- Run `/code-review` **and** `/security-review` as the independent second pass required by the
+  `codereview` skill (Step −1). In `solo` mode they are the only second opinion that exists.
+- `/gates` · `/pre-flight` · `/honesty` · `/execute-plan` are available as slash commands.
+- Subagents live in `.claude/agents/`; the delegation workflow is
+  `.claude/workflows/parallel-implementation.md`.
+
+<Delete this section if there is nothing Claude-specific — an empty section reads as if it was checked.>

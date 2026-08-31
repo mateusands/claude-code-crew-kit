@@ -1,0 +1,14 @@
+{
+  "$comment": "Stays on your machine, OUTSIDE git (add .claude/settings.local.json to .gitignore). This is for personal permissions and the commands you repeat — not project rules. A rule that applies to everyone lives in settings.json, versioned.",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm test:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pytest:*)",
+      "Skill(code-review)",
+      "Skill(code-review:*)"
+    ]
+  }
+}

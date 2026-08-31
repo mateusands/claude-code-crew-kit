@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "agy": {
+      "command": "node",
+      "args": ["/absolute/path/to/.claude/mcp/agy/server.mjs"]
+    }
+  }
+}

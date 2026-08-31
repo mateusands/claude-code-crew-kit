@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "copilot": {
+      "command": "node",
+      "args": ["/absolute/path/to/.claude/mcp/copilot/server.mjs"]
+    }
+  }
+}
