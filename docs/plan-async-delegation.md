@@ -237,8 +237,28 @@ Order, each failing before its fix exists:
 **Rollback:** `e4947e1`. Additive tools mean an old `.mcp.json` keeps working; reverting the audit
 change restores per-call bracketing exactly.
 
-**Rollout order:** ~~probe assumption 5~~ ✅ → **harness + failing tests (blocked, see below)** →
-audit attribution → job tools → lifecycle fix → docs → port to `copilot` as a separate change.
+**Rollout order:** ~~probe assumption 5~~ ✅ → ~~harness + failing tests~~ ✅ →
+~~audit attribution~~ ✅ → **job tools** → lifecycle fix → docs → port to `copilot` as a separate
+change.
+
+### Done so far
+
+`tests/` drives the real server over stdio against throwaway repos with a stand-in executor —
+`node --test tests/`, five tests, no model and no network. The audit now snapshots per **epoch**
+rather than per call: an epoch opens when a job starts with none running, every job in it audits
+against that one baseline, and a changed path is attributed to whoever declared it. A path nobody
+declared stays a violation reported to all of them, because attribution is impossible there and
+silence would be worse.
+
+Two races surfaced, both in the rework itself and both caught by the suite rather than by reading:
+
+1. `beginJob` awaited the baseline before registering, so a second call arriving during that await
+   saw an empty registry and opened a competing epoch — the original bug, unchanged. Registration is
+   now synchronous up to and including `active.add`.
+2. The baseline was then shared as a promise nobody awaited, so a fast executor wrote *before* the
+   snapshot and its change became invisible to the audit — strictly worse than the bug being fixed.
+   The caller now awaits the baseline before the executor is allowed to run. Only the lone-job test
+   with a zero-delay executor exposed this; every concurrent test passed straight through it.
 
 ---
 

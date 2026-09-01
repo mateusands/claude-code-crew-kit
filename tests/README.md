@@ -10,13 +10,18 @@ node --test tests/
 | File | What it covers |
 |---|---|
 | `helpers.mjs` | an MCP stdio client, and git fixtures |
-| `audit-concurrency.test.mjs` | test 1 of [`../docs/plan-async-delegation.md`](../docs/plan-async-delegation.md) |
+| `audit-concurrency.test.mjs` | jobs running at once must not accuse each other |
+| `audit-integrity.test.mjs` | …and the audit must still catch what it is for |
 
-🔴 **`audit-concurrency.test.mjs` fails on purpose right now.** It is the red that the audit rework
-has to turn green: two delegated jobs with disjoint ownership run at once, and each one's report
-accuses the other of an out-of-scope write. The bug is real — per-call `git status` bracketing
-(`mcp/agy/server.mjs:63-88,134-144`) puts one job's legitimate write inside the other's snapshot.
-Do not "fix" it by relaxing the assertion.
+🔴 **The second file is the one that matters.** Making concurrent jobs stop accusing each other means
+teaching the audit to ignore something, and an exemption that widens by accident is how the whole
+delegation guarantee dies quietly. So every real violation is pinned down: a write nobody declared, a
+commit nobody may make, two jobs claiming one file, and a lone job writing out of scope. Never relax
+one of those assertions to make a change pass.
+
+Both races in the epoch logic were caught here rather than in production — one where two jobs opened
+competing epochs, one where a fast executor wrote before the baseline snapshot completed. Neither is
+visible by reading the code; both are one assertion away.
 
 Scratch work — probes, dumps, fixture repos — belongs in `crew-tests/`, which is gitignored. What
 lives here is the evidence that travels with the code.

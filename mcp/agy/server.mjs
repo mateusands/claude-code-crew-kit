@@ -105,7 +105,7 @@ function isOwned(file, owned) {
  * Compare snapshots. Returns the violations the orchestrator must see, and the
  * list of files the executor actually touched.
  */
-function auditSnapshots(before, after, owned) {
+function auditSnapshots(before, after, owned, ownedByOthers = []) {
   const violations = [];
   const touched = [];
   if (!before.repo || !after.repo) {
@@ -137,6 +137,10 @@ function auditSnapshots(before, after, owned) {
     const b = before.files.get(p);
     const a = after.files.get(p);
     if (b === a) continue;
+    // Another job running in this repo declared this file. Its write is that job's
+    // business and is audited in that job's own report — crediting it here would
+    // manufacture a violation out of legitimate parallel work.
+    if (isOwned(p, ownedByOthers)) continue;
     touched.push(p);
     if (owned.length > 0 && !isOwned(p, owned)) {
       violations.push(`OUT-OF-SCOPE WRITE — \`${p}\` was modified but is not in the owned files list.`);
@@ -152,6 +156,74 @@ function auditSnapshots(before, after, owned) {
   }
 
   return { violations, touched, note: null };
+}
+
+/* ─────────────────────────── concurrency epochs ───────────────────────────
+ * Several delegated jobs may run in one repository at once. Bracketing each call
+ * with its own before/after snapshot cannot survive that: one job's `after`
+ * contains the other's legitimate writes, and each accuses the other.
+ *
+ * So the snapshot is per EPOCH, not per call. An epoch opens when a job starts
+ * with none already running, and every job in it audits against that one
+ * baseline. A changed path is attributed to whichever job declared it; a path
+ * nobody declared is a violation reported to all of them, because at that point
+ * attribution is impossible and silence would be worse.
+ *
+ * Jobs that have already finished stay in `owners`: their writes must keep being
+ * excluded from the reports of jobs still running.
+ */
+
+const EPOCHS = new Map();
+let JOB_SEQ = 0;
+
+/** Do two ownership entries cover any of the same ground, in either direction? */
+function pathsOverlap(x, y) {
+  return isOwned(x, [y]) || isOwned(y, [x]);
+}
+
+/** 🔴 Synchronous on purpose, up to and including registration. An earlier version awaited
+ *  the baseline snapshot before adding the job to `active`, and a second call arriving during
+ *  that await saw an empty registry and opened a competing epoch — so each job still audited
+ *  against its own baseline and the accusations came back. Check-then-act must not straddle an
+ *  await here. The baseline is shared as a PROMISE; callers await it when they need the value. */
+function beginJob(cwd, owned) {
+  let epoch = EPOCHS.get(cwd);
+  if (!epoch || epoch.active.size === 0) {
+    epoch = { baselineP: gitSnapshot(cwd), active: new Set(), owners: new Map() };
+    EPOCHS.set(cwd, epoch);
+  } else {
+    for (const id of epoch.active) {
+      const theirs = epoch.owners.get(id) || [];
+      for (const mine of owned) {
+        const clash = theirs.find((t) => pathsOverlap(mine, t));
+        if (clash) {
+          // Refuse rather than queue: a queue turns "parallel" into "serial" without
+          // saying so, and the orchestrator plans around throughput that is not there.
+          return {
+            error:
+              `OWNERSHIP CONFLICT — \`${mine}\` overlaps \`${clash}\`, already owned by job #${id} running in this repository. ` +
+              `Two jobs may not share a file: the audit could not tell you which one wrote it. ` +
+              `Wait for job #${id}, or split the work so each job owns a disjoint set.`,
+          };
+        }
+      }
+    }
+  }
+  const id = ++JOB_SEQ;
+  epoch.active.add(id);
+  epoch.owners.set(id, owned);
+  return { id, epoch };
+}
+
+/** Everything every OTHER job in this epoch declared. */
+function othersOwned(epoch, id) {
+  const out = [];
+  for (const [other, owned] of epoch.owners) if (other !== id) out.push(...owned);
+  return out;
+}
+
+function endJob(epoch, id) {
+  epoch.active.delete(id);
 }
 
 /* ─────────────────────────── the executor's charter ─────────────────────────── */
@@ -447,7 +519,12 @@ async function toolAgyTask(a) {
     return { isError: true, text: "owned_files is required and must be non-empty. An executor with no declared ownership has nothing it may write to." };
   }
   const cwd = resolve(a.cwd);
-  const before = await gitSnapshot(cwd);
+  const job = beginJob(cwd, a.owned_files);
+  if (job.error) return { isError: true, text: job.error };
+  // Registration above is synchronous so two jobs cannot open competing epochs;
+  // the baseline must nonetheless be COMPLETE before the executor may write, or a
+  // fast executor lands its change before the snapshot and the audit never sees it.
+  const before = await job.epoch.baselineP;
   const prompt = buildTaskPrompt({
     task: a.task,
     owned: a.owned_files,
@@ -466,7 +543,8 @@ async function toolAgyTask(a) {
     timeoutS: a.timeout_s || DEFAULT_TIMEOUT_S,
   });
   const after = await gitSnapshot(cwd);
-  const audit = auditSnapshots(before, after, a.owned_files);
+  const audit = auditSnapshots(before, after, a.owned_files, othersOwned(job.epoch, job.id));
+  endJob(job.epoch, job.id);
 
   if (!r.ok && r.error) {
     return {
@@ -511,7 +589,12 @@ async function toolAgyAsk(a) {
   const err = validateCwd(a.cwd);
   if (err) return { isError: true, text: err };
   const cwd = resolve(a.cwd);
-  const before = await gitSnapshot(cwd);
+  const job = beginJob(cwd, []);
+  if (job.error) return { isError: true, text: job.error };
+  // Registration above is synchronous so two jobs cannot open competing epochs;
+  // the baseline must nonetheless be COMPLETE before the executor may write, or a
+  // fast executor lands its change before the snapshot and the audit never sees it.
+  const before = await job.epoch.baselineP;
   const parts = [
     "You are answering a READ-ONLY question about this codebase for another agent.",
     workspaceBlock(cwd),
@@ -532,7 +615,8 @@ async function toolAgyAsk(a) {
     timeoutS: a.timeout_s || DEFAULT_TIMEOUT_S,
   });
   const after = await gitSnapshot(cwd);
-  const audit = auditSnapshots(before, after, []);
+  const audit = auditSnapshots(before, after, [], othersOwned(job.epoch, job.id));
+  endJob(job.epoch, job.id);
   // In read-only mode ANY write is a violation.
   const violations = [...audit.violations];
   for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during an agy_ask call.`);
@@ -556,7 +640,12 @@ async function toolAgyFollowup(a) {
   if (err) return { isError: true, text: err };
   const cwd = resolve(a.cwd);
   const owned = Array.isArray(a.owned_files) ? a.owned_files : [];
-  const before = await gitSnapshot(cwd);
+  const job = beginJob(cwd, owned);
+  if (job.error) return { isError: true, text: job.error };
+  // Registration above is synchronous so two jobs cannot open competing epochs;
+  // the baseline must nonetheless be COMPLETE before the executor may write, or a
+  // fast executor lands its change before the snapshot and the audit never sees it.
+  const before = await job.epoch.baselineP;
   const parts = [workspaceBlock(cwd), "", a.message.trim()];
   if (owned.length) {
     parts.push("", "Reminder — the ONLY files you may write to are:", ...owned.map((f) => "- " + f),
@@ -571,7 +660,8 @@ async function toolAgyFollowup(a) {
     timeoutS: a.timeout_s || DEFAULT_TIMEOUT_S,
   });
   const after = await gitSnapshot(cwd);
-  const audit = auditSnapshots(before, after, owned);
+  const audit = auditSnapshots(before, after, owned, othersOwned(job.epoch, job.id));
+  endJob(job.epoch, job.id);
   const violations = [...audit.violations];
   if (!owned.length) for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY FOLLOW-UP — \`${f}\` changed.`);
 
