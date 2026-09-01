@@ -21,3 +21,6 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Local test workspace — probes, fixtures and scratch repos. Never versioned.
+crew-tests/

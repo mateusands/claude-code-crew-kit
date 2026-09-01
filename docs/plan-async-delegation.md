@@ -54,19 +54,32 @@ wolf on a legitimate write teaches the orchestrator to skim violations.
    `agy_start` twice in one turn and watch for two ids. If the client serialises tool calls per server,
    the job tools still help subagents and headless mode but not main-session fan-out — which changes
    how much this is worth.
-3. **The file audit reads the whole working tree, so any concurrent writer contaminates it.**
-   `gitSnapshot` captures `git status --porcelain` for the entire repo (`server.mjs:63-88`) and
+3. ✅ **VERIFIED — the file audit reads the whole working tree, so any concurrent writer contaminates
+   it.** `gitSnapshot` captures `git status --porcelain` for the entire repo (`server.mjs:63-88`) and
    `auditSnapshots` flags every path whose status changed and is not owned (`server.mjs:134-144`).
-   *Falsify:* run two disjoint jobs today and count the false violations. This is the assumption the
-   whole plan turns on.
+   *Probe `crew-tests/probe-a3.sh`, 2026-09-01:* two agy jobs, A owning `a.ts` and B owning `b.ts`,
+   each bracketing itself exactly as `toolAgyTask` does. Both jobs' own before→after brackets reported
+   **both** files changed, producing one false violation each:
+
+   ```
+   job A  owned=['a.ts']  touched=['a.ts','b.ts']
+      🔴 OUT-OF-SCOPE WRITE — `b.ts` was modified but is not in the owned files list.
+   job B  owned=['b.ts']  touched=['a.ts','b.ts']
+      🔴 OUT-OF-SCOPE WRITE — `a.ts` was modified but is not in the owned files list.
+   ```
+
+   The audit logic was applied as a literal port, because `node` is broken on this machine (see
+   *Blocked* below) — the snapshots themselves are real `git status` output.
 4. **Concurrent `owned_files` will be disjoint**, because `workflows/parallel-implementation.md`
    already requires exclusive file ownership per slice. *Falsify:* compute the intersection at
    `agy_start` — if it is ever non-empty in practice, question 2's default is wrong.
-5. 🔴 **The `agy` CLI tolerates N processes in the same working directory.** **Not verified, and the
-   riskiest item here.** `mcp/agy/README.md` already records agy falling back to
-   `~/.gemini/antigravity-cli/scratch` — a shared scratch path is exactly where concurrent runs would
-   collide. *Falsify before writing any server code:* spawn two `agy` runs in one repo and watch for a
-   lock, a clobbered scratch dir, or interleaved output.
+5. ✅ **VERIFIED — the `agy` CLI tolerates concurrent processes in the same working directory.** This
+   was the item the whole plan hung on. *Probe `crew-tests/probe-a5.sh`, 2026-09-01, agy 1.1.22:* two
+   runs launched in parallel in one repo, replicating `callAgy`'s invocation exactly. Both returned
+   `status: SUCCESS` and exit 0 in ~10 s; each wrote only its own file (`a.ts`→2, `b.ts`→2); HEAD did
+   not move; `~/.gemini/antigravity-cli/scratch` was untouched. No lock, no clobber, no interleaving.
+   *Limit of the evidence:* two jobs, trivial single-file edits, one model
+   (`gemini-3.7-flash-low`). Not proof for N large jobs.
 6. **The report string stays the contract.** Nothing reads a job's outcome out of band; `agy_result`
    returns the same `report()` text `agy_task` returns today (`server.mjs:395`).
 
@@ -199,15 +212,51 @@ Order, each failing before its fix exists:
 | Risk | Mitigation |
 |---|---|
 | 🔴 A weakened audit lets a real violation through | Tests 2 and 3 exist precisely for this and must be written before the audit changes |
-| `agy` collides with itself under concurrency | Probe assumption 5 **first**. If it collides, the plan stops here and the answer becomes "serialise per cwd", which is a much smaller change |
+| ~~`agy` collides with itself under concurrency~~ | **Retired — probed and disproved (assumption 5).** |
 | The twin (`copilot`) drifts | Port deliberately in a second pass, or declare in `mcp/copilot/README.md` that it has not been ported |
 | A job leaks and keeps the server alive forever | TTL on the job registry; `agy`'s own `timeout_s` already caps the process |
 
 **Rollback:** `e4947e1`. Additive tools mean an old `.mcp.json` keeps working; reverting the audit
 change restores per-call bracketing exactly.
 
-**Rollout order:** probe assumption 5 → harness + failing tests → audit attribution → job tools →
-lifecycle fix → docs → port to `copilot` as a separate change.
+**Rollout order:** ~~probe assumption 5~~ ✅ → **harness + failing tests (blocked, see below)** →
+audit attribution → job tools → lifecycle fix → docs → port to `copilot` as a separate change.
+
+---
+
+## Blocked — `node` does not run on this machine
+
+`/usr/bin/node` (nodejs 26.7.0-2) fails with `libada.so.3: cannot open shared object file`; the system
+carries `libada.so.4`. A partial upgrade left the binary linked against the previous soname.
+
+This blocks the test harness, which needs `node --test` — and it also means **the agy and copilot MCP
+servers cannot start at all right now**, since both run under `node`. The probes above were unaffected
+only because `agy` is a standalone ELF binary.
+
+Two ways out, both the human's call: a full system upgrade (`sudo pacman -Syu`) to get a rebuilt
+`nodejs`, or a user-local Node install that leaves system packages alone.
+
+---
+
+## Found while probing — out of scope, fix separately
+
+🔴 **`effort` and the default model contradict each other, and every call that sets both fails.**
+`agy models` shows the effort is baked into the model name — `gemini-3.7-flash-high`, `-medium`,
+`-low`. `callAgy` pushes `--model` and `--effort` independently (`server.mjs:232-234`) and
+`toolAgyTask` passes `model: a.model || DEFAULT_MODEL` alongside `effort: a.effort`
+(`server.mjs:445-446`). So a caller that sets `effort` without overriding `model` gets:
+
+```
+{"status":"ERROR","error":"invalid model selection (--model \"gemini-3.7-flash-high\" --effort \"low\"):
+ --model gemini-3.7-flash-high conflicts with --effort=low"}
+```
+
+The tool schema actively invites this — `effort`'s own description says *"Match it to the task"*
+(`server.mjs:335`). The same defect is in `mcp/copilot/server.mjs`.
+
+The flag is not useless: `claude-sonnet-4-6` and `claude-opus-4-6-thinking` carry no suffix, so
+`--effort` is meaningful for them. The fix is conditional, not a deletion — suppress or translate
+`--effort` when the chosen model already encodes it.
 
 ---
 
@@ -219,7 +268,10 @@ lifecycle fix → docs → port to `copilot` as a separate change.
 
 ## Verdict
 
-🟡 **Ready to implement, conditional on assumption 5.** The design is sound and the blast radius is
-contained, but the entire premise dies if the `agy` CLI cannot run twice in one directory — and that is
-an hour's probe, not a guess to carry into implementation. Probe first; if it collides, this plan is
-replaced by a much smaller one that serialises per `cwd` and still returns handles immediately.
+🟢 **Ready to implement.** The condition is discharged: assumption 5 was probed and holds, and
+assumption 3 — the reason this change exists — was reproduced rather than argued, with the false
+violation printed verbatim.
+
+One dependency remains, environmental rather than a design risk: the harness cannot be written until
+`node` runs on this machine. Everything downstream of the harness stays parked until then, because
+writing the audit change before the failing test exists is the one sequencing this plan refuses.
