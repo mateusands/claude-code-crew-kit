@@ -25,11 +25,11 @@ const PROTOCOL_FALLBACK = "2024-11-05";
 
 /* ─────────────────────────── shell helpers ─────────────────────────── */
 
-function run(cmd, args, { cwd, timeoutMs, input } = {}) {
+function run(cmd, args, { cwd, timeoutMs, input, signal } = {}) {
   return new Promise((res) => {
     let child;
     try {
-      child = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"] });
+      child = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"], signal });
     } catch (e) {
       return res({ code: -1, stdout: "", stderr: String(e), timedOut: false });
     }
@@ -305,7 +305,7 @@ function buildTaskPrompt({ task, owned, context, acceptance, notes, cwd, skills 
  *  it. So the flag is conditional, not removable. */
 const EFFORT_SUFFIX = /-(low|medium|high)$/;
 
-async function callAgy({ prompt, cwd, model, effort, mode, conversationId, addDirs, timeoutS }) {
+async function callAgy({ prompt, cwd, model, effort, mode, conversationId, addDirs, timeoutS, signal }) {
   const args = [];
   const baked = model ? (model.match(EFFORT_SUFFIX)?.[1] ?? null) : null;
   if (effort && baked && baked !== effort) {
@@ -338,8 +338,11 @@ async function callAgy({ prompt, cwd, model, effort, mode, conversationId, addDi
       writeFileSync(process.env.AGY_MCP_DEBUG, JSON.stringify({ cwd, args }, null, 2));
     } catch { /* debugging must never break the call */ }
   }
-  const r = await run(AGY_BIN, args, { cwd, timeoutMs: timeoutS * 1000 });
+  const r = await run(AGY_BIN, args, { cwd, timeoutMs: timeoutS * 1000, signal });
 
+  if (signal?.aborted) {
+    return { ok: false, cancelled: true, error: "Cancelled by agy_cancel. Partial work may exist in the working tree — read the diff before doing anything else." };
+  }
   if (r.timedOut) {
     return { ok: false, error: `agy timed out after ${timeoutS}s. Partial work may exist in the working tree — check git status.` };
   }
@@ -395,6 +398,9 @@ function usageLine(p) {
 }
 
 /* ─────────────────────────── tools ─────────────────────────── */
+
+/** agy_start takes exactly what agy_task takes; declaring it twice is how the two drift. */
+let TOOLS_TASK_SCHEMA;
 
 const TOOLS = [
   {
@@ -468,11 +474,63 @@ const TOOLS = [
     },
   },
   {
+    name: "agy_start",
+    description:
+      "Start a delegated task and get a HANDLE back immediately instead of waiting for it. Same rules, same charter and the same git audit as agy_task. " +
+      "Use this to fan several disjoint slices out at once, or whenever you want to keep working — or keep talking to the human — while the executor runs. " +
+      "Two jobs may not declare overlapping files: the audit could not then say which one wrote what, so the second call is refused. " +
+      "🔴 The handle says the executor STARTED, nothing more. The work is unverified until you read its report with agy_await, and then read the diff yourself.",
+    inputSchema: TOOLS_TASK_SCHEMA,
+  },
+  {
+    name: "agy_await",
+    description:
+      "Wait for jobs started with agy_start and return their full reports, audit included. Omit job_ids to wait for every job still running. " +
+      "Call this when you actually need the results — it blocks, and your host may move it to the background and notify you when it settles. " +
+      "Waiting costs no wall clock: the executors have been running since agy_start, so only this call waits.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        job_ids: { type: "array", items: { type: "string" }, description: "Handles from agy_start. Omit to wait for all running jobs." },
+      },
+    },
+  },
+  {
+    name: "agy_status",
+    description: "Peek at delegated jobs without waiting — state, elapsed seconds and declared ownership. Omit job_id to list them all. Never blocks.",
+    inputSchema: {
+      type: "object",
+      properties: { job_id: { type: "string", description: "One handle. Omit to list every job in this session." } },
+    },
+  },
+  {
+    name: "agy_result",
+    description: "Read a finished job's report again without waiting. Returns the same audit agy_await returned. Says so if the job is still running.",
+    inputSchema: {
+      type: "object",
+      properties: { job_id: { type: "string" } },
+      required: ["job_id"],
+    },
+  },
+  {
+    name: "agy_cancel",
+    description:
+      "Kill a running job. 🔴 Whatever the executor already wrote STAYS in the working tree, half-done — cancelling is not undoing. Read the diff afterwards.",
+    inputSchema: {
+      type: "object",
+      properties: { job_id: { type: "string" } },
+      required: ["job_id"],
+    },
+  },
+  {
     name: "agy_models",
     description: "List the models the local agy install can use. Call this if you are unsure a model name is valid before delegating.",
     inputSchema: { type: "object", properties: {} },
   },
 ];
+
+TOOLS_TASK_SCHEMA = TOOLS.find((t) => t.name === "agy_task").inputSchema;
+for (const t of TOOLS) if (t.name === "agy_start") t.inputSchema = TOOLS_TASK_SCHEMA;
 
 /* ─────────────────────────── tool implementations ─────────────────────────── */
 
@@ -512,19 +570,31 @@ function report({ header, violations, touched, declared, agyText, usage, convers
   return out.join("\n");
 }
 
-async function toolAgyTask(a) {
+/** Validate, open an epoch slot and take the baseline. Shared by the blocking and the
+ *  handle-returning entry points so they cannot drift apart on the audit. */
+async function prepareTask(a) {
   const err = validateCwd(a.cwd);
-  if (err) return { isError: true, text: err };
+  if (err) return { error: err };
   if (!Array.isArray(a.owned_files) || a.owned_files.length === 0) {
-    return { isError: true, text: "owned_files is required and must be non-empty. An executor with no declared ownership has nothing it may write to." };
+    return { error: "owned_files is required and must be non-empty. An executor with no declared ownership has nothing it may write to." };
   }
   const cwd = resolve(a.cwd);
   const job = beginJob(cwd, a.owned_files);
-  if (job.error) return { isError: true, text: job.error };
+  if (job.error) return { error: job.error };
   // Registration above is synchronous so two jobs cannot open competing epochs;
   // the baseline must nonetheless be COMPLETE before the executor may write, or a
   // fast executor lands its change before the snapshot and the audit never sees it.
   const before = await job.epoch.baselineP;
+  return { cwd, job, before };
+}
+
+async function toolAgyTask(a) {
+  const p0 = await prepareTask(a);
+  if (p0.error) return { isError: true, text: p0.error };
+  return runTask(a, p0);
+}
+
+async function runTask(a, { cwd, job, before }, signal) {
   const prompt = buildTaskPrompt({
     task: a.task,
     owned: a.owned_files,
@@ -541,6 +611,7 @@ async function toolAgyTask(a) {
     mode: "accept-edits",
     addDirs: [],
     timeoutS: a.timeout_s || DEFAULT_TIMEOUT_S,
+    signal,
   });
   const after = await gitSnapshot(cwd);
   const audit = auditSnapshots(before, after, a.owned_files, othersOwned(job.epoch, job.id));
@@ -679,6 +750,107 @@ async function toolAgyFollowup(a) {
   };
 }
 
+/* ─────────────────────────── job handles ───────────────────────────
+ * `agy_task` blocks for as long as the executor runs. `agy_start` returns a handle
+ * instead, so the orchestrator can fan several slices out and keep working.
+ *
+ * A handle alone never tells you the work finished — an MCP server cannot wake its
+ * client, so `agy_status` only answers when someone thinks to ask. That is what
+ * `agy_await` is for: it blocks on work that is ALREADY running, so the client's own
+ * backgrounding turns it into a notification. Starting costs nothing and waiting
+ * costs no wall clock.
+ *
+ * Records live in memory and die with the process. A lost handle degrades to reading
+ * the diff, which the orchestrator owes the task regardless.
+ */
+
+const JOBS = new Map();
+let HANDLE_SEQ = 0;
+
+const elapsed = (rec) => Math.round(((rec.finishedAt ?? Date.now()) - rec.startedAt) / 1000);
+const runningJobs = () => [...JOBS.values()].filter((j) => j.state === "working");
+
+function jobLine(rec) {
+  return `${rec.id} · ${rec.state} · ${elapsed(rec)}s · owns ${rec.owned.join(", ")}`;
+}
+
+async function toolAgyStart(a) {
+  const prep = await prepareTask(a);
+  if (prep.error) return { isError: true, text: prep.error };
+
+  const id = `job-${++HANDLE_SEQ}`;
+  const ctrl = new AbortController();
+  const rec = { id, state: "working", cwd: prep.cwd, owned: a.owned_files, startedAt: Date.now(), finishedAt: null, result: null, ctrl };
+  rec.promise = runTask(a, prep, ctrl.signal)
+    .then((r) => {
+      rec.result = r;
+      rec.state = ctrl.signal.aborted ? "cancelled" : r.isError ? "failed" : "completed";
+    })
+    .catch((e) => {
+      rec.result = { isError: true, text: `agy-mcp internal error: ${e?.stack || e}` };
+      rec.state = "failed";
+    })
+    .finally(() => {
+      rec.finishedAt = Date.now();
+      maybeExit();
+    });
+  JOBS.set(id, rec);
+
+  return {
+    isError: false,
+    text:
+      `STARTED ${id} — owns ${a.owned_files.join(", ")}\n\n` +
+      `The executor is running. Nothing about this result says the work is correct or even started well.\n` +
+      `Call agy_await with this id when you want the report; agy_status to peek without waiting.`,
+  };
+}
+
+function toolAgyStatus(a) {
+  if (a.job_id) {
+    const rec = JOBS.get(a.job_id);
+    if (!rec) return { isError: true, text: `No such job: ${a.job_id}. Handles die with the server process.` };
+    return { isError: false, text: jobLine(rec) };
+  }
+  if (JOBS.size === 0) return { isError: false, text: "No jobs in this session." };
+  return { isError: false, text: [...JOBS.values()].map(jobLine).join("\n") };
+}
+
+async function toolAgyResult(a) {
+  const rec = JOBS.get(a.job_id);
+  if (!rec) return { isError: true, text: `No such job: ${a.job_id}. Handles die with the server process.` };
+  if (rec.state === "working") {
+    return { isError: false, text: `${jobLine(rec)}\n\nStill running — use agy_await to wait for it.` };
+  }
+  return rec.result ?? { isError: true, text: `${rec.id} finished as ${rec.state} with no report.` };
+}
+
+async function toolAgyAwait(a) {
+  const ids = Array.isArray(a.job_ids) && a.job_ids.length ? a.job_ids : runningJobs().map((j) => j.id);
+  if (!ids.length) return { isError: false, text: "Nothing to wait for." };
+
+  const missing = ids.filter((id) => !JOBS.has(id));
+  if (missing.length) return { isError: true, text: `No such job: ${missing.join(", ")}. Handles die with the server process.` };
+
+  const recs = ids.map((id) => JOBS.get(id));
+  await Promise.all(recs.map((r) => r.promise));
+
+  const parts = recs.map((r) => `═══ ${jobLine(r)} ═══\n${r.result?.text ?? "(no report)"}`);
+  return { isError: recs.some((r) => r.result?.isError), text: parts.join("\n\n") };
+}
+
+function toolAgyCancel(a) {
+  const rec = JOBS.get(a.job_id);
+  if (!rec) return { isError: true, text: `No such job: ${a.job_id}.` };
+  if (rec.state !== "working") return { isError: false, text: `${rec.id} already ${rec.state}; nothing to cancel.` };
+  rec.ctrl.abort();
+  return {
+    isError: false,
+    text:
+      `Cancelling ${rec.id}. The executor is killed mid-flight, so whatever it had already written STAYS in the working tree, half-done. ` +
+      `Read the diff before doing anything else; agy_await still returns its audit.`,
+  };
+}
+
 async function toolAgyModels() {
   const r = await run(AGY_BIN, ["models"], { timeoutMs: 30000 });
   if (r.code !== 0) return { isError: true, text: `Could not list models: ${r.stderr.trim() || r.stdout.trim()}` };
@@ -686,6 +858,11 @@ async function toolAgyModels() {
 }
 
 const IMPL = {
+  agy_start: toolAgyStart,
+  agy_await: toolAgyAwait,
+  agy_status: toolAgyStatus,
+  agy_result: toolAgyResult,
+  agy_cancel: toolAgyCancel,
   agy_task: toolAgyTask,
   agy_ask: toolAgyAsk,
   agy_followup: toolAgyFollowup,
@@ -732,7 +909,10 @@ let stdinClosed = false;
  *  outlive the request that started it, and killing it mid-flight would leave the
  *  working tree half-written with no report. */
 function maybeExit() {
-  if (stdinClosed && inFlight === 0) process.exit(0);
+  // A job started with agy_start outlives the request that created it, so inFlight
+  // alone would let the process exit while an executor is still writing — leaving a
+  // half-written tree and no report at all.
+  if (stdinClosed && inFlight === 0 && runningJobs().length === 0) process.exit(0);
 }
 
 process.stdin.setEncoding("utf8");

@@ -238,8 +238,8 @@ Order, each failing before its fix exists:
 change restores per-call bracketing exactly.
 
 **Rollout order:** ~~probe assumption 5~~ ✅ → ~~harness + failing tests~~ ✅ →
-~~audit attribution~~ ✅ → **job tools** → lifecycle fix → docs → port to `copilot` as a separate
-change.
+~~audit attribution~~ ✅ → ~~job tools~~ ✅ → ~~lifecycle fix~~ ✅ → ~~docs~~ ✅ → **port to
+`copilot`, as a separate change** (still open).
 
 ### Done so far
 
@@ -321,6 +321,28 @@ model that does not exist.
 ## Deviations
 
 *(empty at plan time — `coder` fills this: OPEN → ADDRESSED → INCORPORATED)*
+
+---
+
+## Delivered
+
+All five acceptance criteria met, verified by `node --test tests/` (nine tests) and by one end-to-end
+run against the real CLI:
+
+| Criterion | Evidence |
+|---|---|
+| handle in under 2 s | **18 ms** for two jobs, real `agy` |
+| N concurrent jobs, zero false violations | `audit-concurrency`, plus the e2e run: each job credited with exactly its own file |
+| real violations still caught while jobs run | `audit-integrity` — unowned write, commit, overlapping ownership, lone out-of-scope write |
+| server does not exit with a job running | `maybeExit` counts running jobs |
+| `agy_task` unchanged | still present, still blocking, covered by the same tests |
+
+Two jobs on the real CLI finished in **9 s** where serial execution took ~18 s.
+
+`agy_start` · `agy_await` · `agy_status` · `agy_result` · `agy_cancel`, over an in-memory registry
+using the MCP Tasks lifecycle names. `copilot` is deliberately not ported yet: its CLI does support
+`--effort` and `--model` independently (checked once node was repaired), so it has no defect to fix,
+but the epoch rework should run on `agy` against real work before being duplicated.
 
 ---
 

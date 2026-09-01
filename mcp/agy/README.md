@@ -43,7 +43,12 @@ MCP timeout is reached. Override it per call with `timeout_s`.
 
 | Tool | Writes? | Use it for |
 |---|---|---|
-| `agy_task` | yes, only inside `owned_files` | one small implementation task |
+| `agy_task` | yes, only inside `owned_files` | one small implementation task · **blocks** |
+| `agy_start` | same as `agy_task` | the same task, returning a **handle at once** instead of waiting |
+| `agy_await` | no | wait for started jobs and read their reports |
+| `agy_status` | no | peek at running jobs without waiting |
+| `agy_result` | no | re-read a finished job's report |
+| `agy_cancel` | no | kill a running job |
 | `agy_ask` | no (plan mode, verified by audit) | analysis, wide search, a second opinion |
 | `agy_followup` | depends on `owned_files` | continue a conversation by `conversation_id` |
 | `agy_models` | no | list available models |
@@ -66,12 +71,29 @@ Keep it to **1–2 skills**: each is a file read out of a limited step budget (t
 executor has neither — it would follow instructions it cannot carry out and report success anyway.
 Those two are the orchestrator's, with Playwright.
 
-### Long calls do not block the main session
+### Fanning out, and not waiting
 
-**Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
-two minutes — you get a task id immediately, keep working, and the result arrives as a task
-notification (visible in `/tasks`, gone if you leave the session). Call `agy_task` from the main
-session and it is already effectively asynchronous.
+`agy_task` blocks. **`agy_start` returns a handle instead** — measured at 18 ms for two jobs against
+the real CLI — so you can start several slices and go on working, or go on talking to the human.
+
+```
+agy_start × N   → handles at once; the executors run in parallel
+agy_status      → peek, never blocks
+agy_await       → the reports, audit included
+```
+
+🔴 **A handle is not a result.** It says the executor started; nothing more. The work is unverified
+until `agy_await` gives you the audit — and then you still read the diff.
+
+Two jobs may not declare overlapping files. The second call is refused, by design: with two owners of
+one path the audit cannot say which one wrote it, and a queue would quietly turn "parallel" into
+"serial" while you plan around throughput that is not there.
+
+**Why `agy_await` exists at all.** A handle never tells you the work finished — an MCP server cannot
+wake its client, so `agy_status` only answers when you think to ask. `agy_await` blocks on work that
+is *already running*, and **Claude Code v2.1.212+ backgrounds a call that passes two minutes**, which
+is what turns it into a notification (visible in `/tasks`, gone if you leave the session). Waiting
+costs no wall clock: the executors have been running since `agy_start`.
 
 🔴 **A call made from a subagent never backgrounds.** Send a task to **`agy-runner`** for what it
 actually gives you — the audit read before the report, a cut-off run retried, the diff verified
@@ -80,6 +102,9 @@ against the claim — accepting that you wait for it in full. See
 [`../README.md`](../README.md#long-delegated-calls-and-the-subagent-trade-off) for the whole timeout
 ladder. (Claude Code does not implement the MCP **Tasks** extension; this is the client's own
 feature.)
+
+**Cancelling is not undoing.** `agy_cancel` kills the executor mid-flight and whatever it had already
+written stays in the tree, half-done. Read the diff.
 
 ## What to delegate — and what not to
 

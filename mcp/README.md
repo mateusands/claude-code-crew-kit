@@ -108,6 +108,11 @@ read before the executor's report, a cut-off run retried once, the diff verified
 a judgement returned — and costs you the backgrounding. Spawn it for the judgement, never to avoid
 waiting. See [`../agents/agy-runner.md`](../agents/agy-runner.md).
 
+**To fan out without waiting**, use `agy_start` (a handle in milliseconds) and `agy_await` (the
+reports, audit included) instead of `agy_task`. Jobs in one repository are audited against a shared
+baseline and attributed by declared ownership, so parallel work no longer produces false violations —
+and two jobs claiming the same file are refused. See [`agy/README.md`](agy/README.md).
+
 **The timeout ladder**, in the order things actually fire:
 
 | Limit | Default | What it does |
