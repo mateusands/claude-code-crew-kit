@@ -227,10 +227,29 @@ function buildTaskPrompt({ task, owned, context, acceptance, notes, cwd, skills 
 
 /* ─────────────────────────── agy invocation ─────────────────────────── */
 
+/** agy bakes the reasoning effort into most model names (`gemini-3.7-flash-high`, `-medium`, `-low`),
+ *  and rejects `--model <suffixed> --effort <x>` as a contradiction. A few models carry no suffix
+ *  (`claude-sonnet-4-6`, `claude-opus-4-6-thinking`), and for those `--effort` is the only way to say
+ *  it. So the flag is conditional, not removable. */
+const EFFORT_SUFFIX = /-(low|medium|high)$/;
+
 async function callAgy({ prompt, cwd, model, effort, mode, conversationId, addDirs, timeoutS }) {
   const args = [];
+  const baked = model ? (model.match(EFFORT_SUFFIX)?.[1] ?? null) : null;
+  if (effort && baked && baked !== effort) {
+    // Fail here rather than let agy reject it after the call is set up. Guessing the sibling
+    // model name is not an option: `gemini-3.1-pro` ships -high and -low but no -medium.
+    return {
+      ok: false,
+      error:
+        `Model \`${model}\` already runs at effort=${baked}, so \`effort: "${effort}"\` contradicts it and agy refuses the call. ` +
+        `Pick the model variant instead — e.g. \`${model.replace(EFFORT_SUFFIX, "-" + effort)}\` — and drop \`effort\`. ` +
+        `Call agy_models first: not every family has all three (gemini-3.1-pro has -high and -low, no -medium).`,
+    };
+  }
   if (model) args.push("--model", model);
-  if (effort) args.push("--effort", effort);
+  // Suppressed when the model name already says it — passing both is what agy rejects.
+  if (effort && !baked) args.push("--effort", effort);
   if (mode) args.push("--mode", mode);
   if (conversationId) args.push("--conversation", conversationId);
   // The workspace must be added explicitly; agy ignores the process cwd.
@@ -332,7 +351,7 @@ const TOOLS = [
           description: "Project skills the executor must read and follow, by directory name (e.g. [\"coder\"], [\"coder\",\"frontend\"]). It reads .claude/skills/<name>/SKILL.md. Keep it to 1-2 — each one costs a file read out of a limited step budget. Use `coder` for any implementation task, plus `frontend` or `backend` for the matching layer. Do NOT pass `design-review` or `local-testing`: those need a browser and a terminal, which the executor does not have — you run those yourself.",
         },
         model: { type: "string", description: `agy model. Default ${DEFAULT_MODEL} (best of the Google line). Cheaper/faster for trivial edits: gemini-3.7-flash-low.` },
-        effort: { type: "string", enum: ["low", "medium", "high"], description: "Reasoning effort. Match it to the task: low for mechanical, high only if you are delegating something you should probably do yourself." },
+        effort: { type: "string", enum: ["low", "medium", "high"], description: "Reasoning effort — ONLY for a model whose name does not already end in -low/-medium/-high. Every gemini model here bakes it into the name, so for those choose the model variant (gemini-3.7-flash-low for mechanical work) and leave this unset; passing both is refused. It applies to the unsuffixed models, e.g. claude-sonnet-4-6." },
         timeout_s: { type: "number", description: `Seconds before the executor is killed. Default ${DEFAULT_TIMEOUT_S}.` },
       },
       required: ["task", "owned_files", "cwd"],
@@ -352,7 +371,7 @@ const TOOLS = [
         cwd: { type: "string", description: "Absolute path to the project root to analyse." },
         context_files: { type: "array", items: { type: "string" }, description: "Files it should start from." },
         model: { type: "string", description: `Default ${DEFAULT_MODEL}.` },
-        effort: { type: "string", enum: ["low", "medium", "high"] },
+        effort: { type: "string", enum: ["low", "medium", "high"], description: "Only for a model that does not already encode effort in its name — see agy_task's note." },
         timeout_s: { type: "number" },
       },
       required: ["question", "cwd"],

@@ -233,8 +233,19 @@ This blocks the test harness, which needs `node --test` — and it also means **
 servers cannot start at all right now**, since both run under `node`. The probes above were unaffected
 only because `agy` is a standalone ELF binary.
 
-Two ways out, both the human's call: a full system upgrade (`sudo pacman -Syu`) to get a rebuilt
-`nodejs`, or a user-local Node install that leaves system packages alone.
+Two permanent ways out, both the human's call: a full system upgrade (`sudo pacman -Syu`) to get a
+rebuilt `nodejs`, or a user-local Node install that leaves system packages alone.
+
+✅ **Unblocked in the meantime.** The machine has Electron 40, which runs as a Node runtime:
+
+```bash
+ELECTRON_RUN_AS_NODE=1 /usr/lib/electron40/electron --version   # v24.15.0
+```
+
+That is enough for `--check`, for `node:test`, and for driving the server over stdio — the whole
+harness. It is a local workaround, not a fix: the `.mcp.json` entries still say `"command": "node"`,
+so **the MCP servers themselves stay dead for Claude Code until the real node is repaired.** Nothing
+in the repository should be changed to depend on Electron.
 
 ---
 
@@ -251,12 +262,21 @@ Two ways out, both the human's call: a full system upgrade (`sudo pacman -Syu`) 
  --model gemini-3.7-flash-high conflicts with --effort=low"}
 ```
 
-The tool schema actively invites this — `effort`'s own description says *"Match it to the task"*
-(`server.mjs:335`). The same defect is in `mcp/copilot/server.mjs`.
+The tool schema actively invites this — `effort`'s own description said *"Match it to the task"*
+(`server.mjs:335`).
+
+**Correction on `copilot`:** an earlier draft of this document claimed the same defect there. It does
+not follow. `mcp/copilot/server.mjs:41` defaults `DEFAULT_MODEL` to `""`, so `--model` is not sent
+unless someone sets `COPILOT_MCP_MODEL`, and no contradiction arises by default. Whether the
+`copilot` CLI even accepts `--effort` could not be checked, because `copilot` is a node script and
+node is broken here (see *Blocked*). Left alone until it can be verified.
 
 The flag is not useless: `claude-sonnet-4-6` and `claude-opus-4-6-thinking` carry no suffix, so
-`--effort` is meaningful for them. The fix is conditional, not a deletion — suppress or translate
-`--effort` when the chosen model already encodes it.
+`--effort` is meaningful for them. **Fixed in this branch**, conditionally rather than by deletion:
+`--effort` is suppressed when the model name already encodes the same effort, and a mismatch is
+refused up front with the sibling model name in the message. It does not auto-rewrite the model —
+`gemini-3.1-pro` ships `-high` and `-low` but no `-medium`, so guessing the sibling would invent a
+model that does not exist.
 
 ---
 
@@ -272,6 +292,7 @@ The flag is not useless: `claude-sonnet-4-6` and `claude-opus-4-6-thinking` carr
 assumption 3 — the reason this change exists — was reproduced rather than argued, with the false
 violation printed verbatim.
 
-One dependency remains, environmental rather than a design risk: the harness cannot be written until
-`node` runs on this machine. Everything downstream of the harness stays parked until then, because
-writing the audit change before the failing test exists is the one sequencing this plan refuses.
+The harness is no longer blocked: Electron 40 provides a working Node v24.15.0 for tests, even though
+the servers themselves cannot start under Claude Code until the system `node` is repaired. So the plan
+can proceed through harness → failing tests → audit attribution, and only the final end-to-end
+validation (L2/L3) waits on the repair.
