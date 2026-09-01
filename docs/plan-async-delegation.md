@@ -131,10 +131,26 @@ wolf on a legitimate write teaches the orchestrator to skim violations.
 
 **Shape: add, then change one function.** Not a rewrite.
 
-**Add** four tools — `agy_start`, `agy_status`, `agy_result`, `agy_cancel` — over an in-memory job
-registry with states `working → completed | failed | cancelled`. Those names mirror the MCP Tasks
-lifecycle on purpose: when a client we use implements that extension, the migration is a rename, not a
-redesign.
+**Add** five tools — `agy_start`, `agy_status`, `agy_result`, `agy_cancel` and `agy_await` — over an
+in-memory job registry with states `working → completed | failed | cancelled`. Those names mirror the
+MCP Tasks lifecycle on purpose: when a client we use implements that extension, the migration is a
+rename, not a redesign.
+
+**Why `agy_await` exists.** A handle alone gives an orchestrator no way to *learn* the job finished —
+an MCP server cannot wake a Claude Code session, so `agy_status` only answers when someone thinks to
+ask. Claude Code's own backgrounding does deliver an automatic notification, but only for a call that
+blocked past the threshold. So the two compose:
+
+```
+agy_start × N   → ids in under a second, session free, executors running in parallel
+agy_await(ids)  → blocks; the client backgrounds it and notifies when it settles
+```
+
+The block in `agy_await` costs nothing in wall clock: by the time it is called the executors have been
+running for a while, and the only thing waiting is the orchestrator's own turn — which the client
+releases at `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` anyway. This is the piece that makes the feature
+answer the actual request ("call it and keep talking to me"), rather than merely making the call
+non-blocking.
 
 **Change** the audit from per-call bracketing to **ownership attribution**:
 
@@ -192,6 +208,8 @@ Order, each failing before its fix exists:
    stay up until the job settles.
 5. **`overlapping ownership is refused`** — second `agy_start` naming an owned path of a running job is
    rejected, naming both.
+6. **`agy_await settles with the job`** — `agy_await` on a running job returns only once it reaches a
+   terminal state, and returns immediately for a job that already finished.
 
 ---
 
