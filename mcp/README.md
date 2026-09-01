@@ -94,12 +94,35 @@ Delegation multiplies whatever the plan already got right. It does not decide an
 not reduce what you owe the project: after every delegated task you still read the diff, run the
 suite, and exercise it.
 
-## Not blocking on a delegated task
+## Long delegated calls, and the subagent trade-off
 
-`agy_task` is synchronous — it blocks for as long as the executor runs. To keep working meanwhile,
-spawn the **`agy-runner`** subagent in the background, one per slice. It drives the agy call, reads
-the git audit, retries a cut-off run once, reviews the diff, and reports back. See
-[`../agents/agy-runner.md`](../agents/agy-runner.md).
+**Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
+two minutes: you get a task id immediately, keep working, and the result comes back later as a task
+notification. It shows up in `/tasks`, and it does not survive leaving the session. So `agy_task`
+called from the main session is already effectively asynchronous — there is nothing to work around.
+
+🔴 **A call made from a subagent never backgrounds.** Neither do calls to IDE servers, calls in
+non-interactive/headless mode (unless `CLAUDE_AUTO_BACKGROUND_TASKS=1`), or a call waiting on an open
+elicitation dialog. Routing a delegation through **`agy-runner`** buys supervision — the git audit
+read before the executor's report, a cut-off run retried once, the diff verified against the claim,
+a judgement returned — and costs you the backgrounding. Spawn it for the judgement, never to avoid
+waiting. See [`../agents/agy-runner.md`](../agents/agy-runner.md).
+
+**The timeout ladder**, in the order things actually fire:
+
+| Limit | Default | What it does |
+|---|---|---|
+| `timeout_s` per call · `AGY_MCP_TIMEOUT_S` / `COPILOT_MCP_TIMEOUT_S` | `600` | **our wrapper kills the executor first** — this, not any client limit, is what cuts a long delegation today |
+| `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` | `120000` | when the client backgrounds a main-session call · `0` disables |
+| `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | — | `1` turns background tasks off entirely |
+| `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` | 30 min (stdio) · 5 min (HTTP/SSE) | aborts a call that sends neither a response nor a progress notification for that long · `0` disables |
+| `MCP_TOOL_TIMEOUT` | ~28 h | wall clock per tool call |
+| `timeout` per server in `.mcp.json` | — | hard wall-clock limit |
+
+Progress notifications reset the idle timer; they do **not** extend the wall clock.
+
+> None of this is the MCP **Tasks** extension — Claude Code does not implement it. The backgrounding
+> above is the client's own feature, so it depends on the client version, not on the spec.
 
 ## Adding another agent (Kimi, DeepSeek, Qwen…)
 

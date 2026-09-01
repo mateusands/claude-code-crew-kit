@@ -36,6 +36,9 @@ Requires `agy` on `PATH` and Node 18+. No npm dependencies.
 | `AGY_MCP_TIMEOUT_S` | `600` | seconds before the executor is killed |
 | `AGY_MCP_DEBUG` | — | file path to dump the exact args of the last call |
 
+That 600-second cap is the one that fires: the wrapper kills the executor long before any client-side
+MCP timeout is reached. Override it per call with `timeout_s`.
+
 ## Tools
 
 | Tool | Writes? | Use it for |
@@ -63,11 +66,20 @@ Keep it to **1–2 skills**: each is a file read out of a limited step budget (t
 executor has neither — it would follow instructions it cannot carry out and report success anyway.
 Those two are the orchestrator's, with Playwright.
 
-### Not blocking on a call
+### Long calls do not block the main session
 
-`agy_task` is synchronous. To keep working while it runs, spawn the **`agy-runner`** subagent in the
-background instead of calling the tool from the main session — see
-[`../../agents/agy-runner.md`](../../agents/agy-runner.md).
+**Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
+two minutes — you get a task id immediately, keep working, and the result arrives as a task
+notification (visible in `/tasks`, gone if you leave the session). Call `agy_task` from the main
+session and it is already effectively asynchronous.
+
+🔴 **A call made from a subagent never backgrounds.** Send a task to **`agy-runner`** for what it
+actually gives you — the audit read before the report, a cut-off run retried, the diff verified
+against the claim — accepting that you wait for it in full. See
+[`../../agents/agy-runner.md`](../../agents/agy-runner.md), and
+[`../README.md`](../README.md#long-delegated-calls-and-the-subagent-trade-off) for the whole timeout
+ladder. (Claude Code does not implement the MCP **Tasks** extension; this is the client's own
+feature.)
 
 ## What to delegate — and what not to
 
