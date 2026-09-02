@@ -1,5 +1,5 @@
 /**
- * Tests 4 and 6 of docs/plan-async-delegation.md, plus the handle lifecycle.
+ * The handle lifecycle: start, await, conflict, cancel.
  *
  * The point of the feature: agy_start hands back a handle at once so the caller
  * keeps working, and agy_await later settles with the job. If start blocks, the

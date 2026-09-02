@@ -1,5 +1,5 @@
 /**
- * Test 1 of docs/plan-async-delegation.md.
+ * Jobs running at once must not accuse each other of writing outside their scope.
  *
  * Two delegated tasks run at once in one repository, each owning a different file.
  * Neither wrote outside its ownership, so neither report may contain a violation.

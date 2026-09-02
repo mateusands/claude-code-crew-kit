@@ -32,5 +32,9 @@ is already working in. An independent review found four defects there, the worst
 executor overwrite any file the human had already touched without the audit saying a word. When you
 add a test here, start dirty.
 
-Scratch work — probes, dumps, fixture repos — belongs in `crew-tests/`, which is gitignored. What
-lives here is the evidence that travels with the code.
+Scratch work — probes, dumps, fixture repos and the design notes this came from — belongs in
+`crew-tests/`, which is gitignored. What lives here is the evidence that travels with the code: the
+servers under `mcp/` are the product, the git audit is the only reason a delegated diff can be
+trusted, and without these tests it can break in silence.
+
+`tests/` is for developing the kit. `install.sh` does not copy it into a consuming project.

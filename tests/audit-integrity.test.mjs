@@ -1,5 +1,5 @@
 /**
- * Tests 2, 3 and 5 of docs/plan-async-delegation.md.
+ * The other half: what the audit must still catch while jobs are in flight.
  *
  * The concurrency rework makes one job's writes invisible to another job's audit.
  * These exist so that exemption can never widen into "the audit stopped looking":

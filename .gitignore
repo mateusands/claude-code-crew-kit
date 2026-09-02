@@ -24,3 +24,6 @@ Thumbs.db
 
 # Local test workspace — probes, fixtures and scratch repos. Never versioned.
 crew-tests/
+
+# Design notes and scratch — kept locally, not part of the kit.
+docs/
