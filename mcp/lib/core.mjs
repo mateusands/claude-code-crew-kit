@@ -61,24 +61,67 @@ async function isGitRepo(cwd) {
 
 /* ─────────────────────────── git audit ─────────────────────────── */
 
-export async function gitSnapshot(cwd) {
-  if (!(await isGitRepo(cwd))) return { repo: false };
-  const [head, status, remotes, stash] = await Promise.all([
-    git(["rev-parse", "HEAD"], cwd),
-    git(["status", "--porcelain=v1", "--untracked-files=all"], cwd),
-    git(["for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes"], cwd),
-    git(["stash", "list"], cwd),
-  ]);
-  const files = new Map();
-  for (const line of status.stdout.split("\n")) {
+/** 🔴 A status CODE is not a fingerprint. A file already at `" M"` before the executor
+ *  runs is still `" M"` after it rewrites the whole thing, and a file already at `"??"`
+ *  stays `"??"` — so comparing codes alone lets an unauthorised overwrite of anything
+ *  the human was already editing pass completely unseen. Every path git reports is
+ *  therefore fingerprinted by size and mtime as well. The set is small: only dirty and
+ *  untracked paths, never the whole tree. */
+function fingerprint(cwd, path) {
+  try {
+    const st = statSync(resolve(cwd, path), { bigint: true });
+    return `${st.size}:${st.mtimeNs}`;
+  } catch {
+    return "absent";
+  }
+}
+
+function parseStatus(cwd, stdout, into) {
+  for (const line of stdout.split("\n")) {
     if (line.trim() === "") continue;
     const code = line.slice(0, 2);
     let path = line.slice(3);
     const arrow = path.indexOf(" -> ");
     if (arrow !== -1) path = path.slice(arrow + 4);
-    files.set(path.replace(/^"|"$/g, ""), code);
+    path = path.replace(/^"|"$/g, "");
+    into.set(path, `${code}|${fingerprint(cwd, path)}`);
   }
-  return { repo: true, head: head.stdout.trim(), files, remotes: remotes.stdout.trim(), stash: stash.stdout.trim() };
+  return into;
+}
+
+export async function gitSnapshot(cwd) {
+  if (!(await isGitRepo(cwd))) return { repo: false };
+  const [head, status, remotes, stash, refs, headRef] = await Promise.all([
+    git(["rev-parse", "HEAD"], cwd),
+    git(["status", "--porcelain=v1", "--untracked-files=all"], cwd),
+    git(["for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes"], cwd),
+    git(["stash", "list"], cwd),
+    // Local branches and tags: `git branch x` and `git tag x` are forbidden by the
+    // charter and move neither HEAD nor the worktree, so nothing else here sees them.
+    git(["for-each-ref", "--format=%(refname) %(objectname)", "refs/heads", "refs/tags"], cwd),
+    // A branch switch between two refs at the same commit leaves HEAD's hash unchanged.
+    git(["symbolic-ref", "-q", "HEAD"], cwd),
+  ]);
+  return {
+    repo: true,
+    head: head.stdout.trim(),
+    files: parseStatus(cwd, status.stdout, new Map()),
+    remotes: remotes.stdout.trim(),
+    stash: stash.stdout.trim(),
+    refs: refs.stdout.trim(),
+    headRef: headRef.stdout.trim(),
+  };
+}
+
+/** Ignored paths never appear in `git status`, so a write into one is invisible to the
+ *  audit. Scanning every ignored file is not an option — `node_modules` alone would
+ *  dwarf the repository — so the scan is limited by pathspec to what this job actually
+ *  declared. An owned ignored path is therefore audited; an UNDECLARED one still cannot
+ *  be seen, and the report says so rather than implying coverage it does not have. */
+export async function ignoredSnapshot(cwd, owned) {
+  if (!owned.length || !(await isGitRepo(cwd))) return new Map();
+  const r = await git(["status", "--porcelain=v1", "--untracked-files=all", "--ignored", "--", ...owned], cwd);
+  return parseStatus(cwd, r.stdout, new Map());
 }
 
 const norm = (p) => p.replace(/^\.\//, "").replace(/\/+$/, "");
@@ -110,6 +153,8 @@ export function auditSnapshots(before, after, owned, ownedByOthers = []) {
   }
   if (before.remotes !== after.remotes) violations.push("REMOTE REFS CHANGED — a push or fetch altered refs/remotes. Pushing is forbidden.");
   if (before.stash !== after.stash) violations.push("STASH CHANGED — the executor ran git stash. This is forbidden.");
+  if (before.refs !== after.refs) violations.push("LOCAL REFS CHANGED — a branch or tag was created, moved or deleted. Branching and tagging belong to the orchestrator.");
+  if (before.headRef !== after.headRef) violations.push("BRANCH SWITCHED — HEAD now points at a different ref. Checkout and switch are forbidden.");
 
   const paths = new Set([...before.files.keys(), ...after.files.keys()]);
   for (const p of paths) {
@@ -193,7 +238,18 @@ export function othersOwned(epoch, id) {
   return out;
 }
 
-export const endJob = (epoch, id) => epoch.active.delete(id);
+/** 🔴 Must run on EVERY exit path, including a throw. When this was reachable only
+ *  through the success path, an exception after registration left the id in `active`
+ *  forever — and every later job claiming that path failed with an ownership conflict
+ *  for the life of the process. Callers wrap the work in try/finally. */
+export function endJob(epoch, id) {
+  epoch.active.delete(id);
+  // The epoch is over. Dropping it keeps EPOCHS from growing one entry per workspace
+  // for the life of the server; the next job opens a fresh one with a fresh baseline.
+  if (epoch.active.size === 0) {
+    for (const [cwd, e] of EPOCHS) if (e === epoch) EPOCHS.delete(cwd);
+  }
+}
 
 export function validateCwd(cwd) {
   if (!cwd || !cwd.startsWith("/")) return "cwd must be an absolute path.";
@@ -345,6 +401,16 @@ async function callExecutor(b, opts) {
 const JOBS = new Map();
 let HANDLE_SEQ = 0;
 
+/** Completed handles keep their full executor report and their AbortController. A
+ *  long-lived server that runs many jobs would grow JOBS without bound, so finished
+ *  records past the most recent MAX_JOBS are dropped; a handle that old has long since
+ *  been read, and a lost one degrades to reading the diff. */
+const MAX_JOBS = 50;
+function reapJobs() {
+  const done = [...JOBS.values()].filter((j) => j.state !== "working");
+  for (const rec of done.slice(0, Math.max(0, done.length - MAX_JOBS))) JOBS.delete(rec.id);
+}
+
 const elapsed = (rec) => Math.round(((rec.finishedAt ?? Date.now()) - rec.startedAt) / 1000);
 const runningJobs = () => [...JOBS.values()].filter((j) => j.state === "working");
 const jobLine = (rec) => `${rec.id} · ${rec.state} · ${elapsed(rec)}s · owns ${rec.owned.join(", ")}`;
@@ -406,13 +472,34 @@ function makeImpl(b) {
     // the baseline must nonetheless be COMPLETE before the executor may write, or a
     // fast executor lands its change before the snapshot and the audit never sees it.
     const before = await job.epoch.baselineP;
-    return { cwd, job, before };
+    const ignoredBefore = await ignoredSnapshot(cwd, owned);
+    return { cwd, job, before, ignoredBefore };
   }
 
-  function finish(prep, owned, after) {
+  async function finish(prep, owned, after) {
     const audit = auditSnapshots(prep.before, after, owned, othersOwned(prep.job.epoch, prep.job.id));
-    endJob(prep.job.epoch, prep.job.id);
+    // Owned paths that git ignores are invisible to the snapshot above, so they get
+    // their own pathspec-limited comparison. Without this, writing a report into an
+    // ignored directory reads as "reported success but changed nothing".
+    const ignoredAfter = await ignoredSnapshot(prep.cwd, owned);
+    for (const [path, fp] of ignoredAfter) {
+      if (prep.ignoredBefore.get(path) === fp) continue;
+      if (!audit.touched.includes(path)) audit.touched.push(path);
+    }
+    for (const path of prep.ignoredBefore.keys()) {
+      if (!ignoredAfter.has(path) && !audit.touched.includes(path)) audit.touched.push(path);
+    }
+    if (ignoredAfter.size || prep.ignoredBefore.size) {
+      audit.note = (audit.note ? audit.note + " " : "") +
+        "Some owned paths are gitignored and were audited by pathspec. A write to an UNDECLARED ignored path (a build directory, .env) cannot be seen by this audit at all.";
+    }
     return audit;
+  }
+
+  /** 🔴 The epoch slot is released here and only here, so a throw cannot strand it. */
+  async function guarded(prep, fn) {
+    try { return await fn(); }
+    finally { endJob(prep.job.epoch, prep.job.id); }
   }
 
   async function runTask(a, prep, signal) {
@@ -422,7 +509,7 @@ function makeImpl(b) {
     });
     const r = await callExecutor(b, { prompt, cwd: prep.cwd, mode: "write", timeoutS: a.timeout_s || b.defaultTimeoutS, signal, ...b.callOpts(a) });
     const after = await gitSnapshot(prep.cwd);
-    const audit = finish(prep, a.owned_files, after);
+    const audit = await finish(prep, a.owned_files, after);
 
     if (!r.ok && r.error) {
       return { isError: true, text: report(b, { header: `${b.name}_task FAILED: ${r.error}`, violations: audit.violations, touched: audit.touched, declared: a.owned_files, execText: r.text || "", usage: "", resumeId: null, auditNote: audit.note }) };
@@ -450,7 +537,7 @@ function makeImpl(b) {
       const bad = needOwned(a); if (bad) return { isError: true, text: bad };
       const prep = await prepare(a, a.owned_files);
       if (prep.error) return { isError: true, text: prep.error };
-      return runTask(a, prep);
+      return guarded(prep, () => runTask(a, prep));
     },
 
     [`${b.name}_start`]: async (a) => {
@@ -463,7 +550,12 @@ function makeImpl(b) {
       rec.promise = runTask(a, prep, ctrl.signal)
         .then((r) => { rec.result = r; rec.state = ctrl.signal.aborted ? "cancelled" : r.isError ? "failed" : "completed"; })
         .catch((e) => { rec.result = { isError: true, text: `${b.name}-mcp internal error: ${e?.stack || e}` }; rec.state = "failed"; })
-        .finally(() => { rec.finishedAt = Date.now(); maybeExit(); });
+        .finally(() => {
+          rec.finishedAt = Date.now();
+          endJob(prep.job.epoch, prep.job.id);
+          reapJobs();
+          maybeExit();
+        });
       JOBS.set(id, rec);
       return { isError: false, text: `STARTED ${id} — owns ${a.owned_files.join(", ")}\n\nThe executor is running. Nothing about this result says the work is correct or even started well.\nCall ${b.name}_await with this id when you want the report; ${b.name}_status to peek without waiting.` };
     },
@@ -505,6 +597,7 @@ function makeImpl(b) {
     [`${b.name}_ask`]: async (a) => {
       const prep = await prepare(a, []);
       if (prep.error) return { isError: true, text: prep.error };
+      return guarded(prep, async () => {
       const parts = [
         "You are answering a READ-ONLY question about this codebase for another agent.",
         workspaceBlock(prep.cwd),
@@ -516,18 +609,20 @@ function makeImpl(b) {
       if (a.context_files?.length) parts.push("", "=== START FROM THESE FILES ===", ...a.context_files.map((f) => "- " + f));
       const r = await callExecutor(b, { prompt: parts.join("\n"), cwd: prep.cwd, mode: "read", timeoutS: a.timeout_s || b.defaultTimeoutS, ...b.callOpts(a) });
       const after = await gitSnapshot(prep.cwd);
-      const audit = finish(prep, [], after);
+      const audit = await finish(prep, [], after);
       const violations = [...audit.violations];
       // In read-only mode ANY write is a violation.
       for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a ${b.name}_ask call.`);
       if (!r.ok && r.error) return { isError: true, text: `${b.name}_ask FAILED: ${r.error}` };
       return { isError: violations.length > 0, text: report(b, { header: `${b.name}_ask ${r.status || "SUCCESS"} · read-only`, violations, touched: audit.touched, declared: null, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
+      });
     },
 
     [`${b.name}_followup`]: async (a) => {
       const owned = Array.isArray(a.owned_files) ? a.owned_files : [];
       const prep = await prepare(a, owned);
       if (prep.error) return { isError: true, text: prep.error };
+      return guarded(prep, async () => {
       const parts = [workspaceBlock(prep.cwd), "", a.message.trim()];
       if (owned.length) {
         parts.push("", "Reminder — the ONLY files you may write to are:", ...owned.map((f) => "- " + f), "", "All prohibitions from your original instructions still apply: no git state changes, no dependency changes.");
@@ -536,11 +631,12 @@ function makeImpl(b) {
       }
       const r = await callExecutor(b, { prompt: parts.join("\n"), cwd: prep.cwd, mode: owned.length ? "write" : "read", resumeId: a[b.resumeIdLabel], timeoutS: a.timeout_s || b.defaultTimeoutS, ...b.callOpts(a) });
       const after = await gitSnapshot(prep.cwd);
-      const audit = finish(prep, owned, after);
+      const audit = await finish(prep, owned, after);
       const violations = [...audit.violations];
       if (!owned.length) for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a read-only follow-up.`);
       if (!r.ok && r.error) return { isError: true, text: `${b.name}_followup FAILED: ${r.error}` };
       return { isError: violations.length > 0, text: report(b, { header: `${b.name}_followup ${r.status || "SUCCESS"}`, violations, touched: audit.touched, declared: owned, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
+      });
     },
 
     ...(b.modelsArgs ? { [`${b.name}_models`]: async () => {
