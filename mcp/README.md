@@ -109,6 +109,24 @@ precisely because two other agents bracket it: a plan written and reviewed by th
 in, and a `codereview` by a complex-tier agent comes out, judged against the git audit rather than
 against the executor's report. Without both, a medium slice is not delegated, it is abandoned.
 
+## 🪤 Two traps paid for in the field
+
+**An unbounded review does not terminate.** Measured on a real project running this kit: two attempts
+at *"review this broadly"* investigated until they blew their budget and produced **no verdict at
+all**. The same work, cut into **five specific questions with a word cap**, came back with a genuine
+🔴 finding in 40k tokens. An executor asked an open question keeps finding more to look at, because
+nothing tells it when it is done — the bound is not a cost saving, it is what makes the answer exist.
+Ask N questions, each answerable, each capped.
+
+**Your own edits look exactly like an executor stepping out of scope.** git records that a file
+changed, never who changed it. That same project delegated a job, kept working while it ran, and got
+three charter violations back — all three its own writes. Its workaround was to stop working in
+parallel, which is most of what delegation was for. So **say so**: pass `reserved_files` with the
+paths you are touching, or `orchestrator_writing: true` when you cannot name them in advance.
+Declaring one path is precise and leaves the verdict hard everywhere else; the flag is blunt and
+turns unowned changes into a stated ambiguity. Declare nothing and the verdict stays hard, which is
+right — by default the orchestrator is not writing.
+
 ## Long delegated calls, and the subagent trade-off
 
 **Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
