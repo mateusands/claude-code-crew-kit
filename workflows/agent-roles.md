@@ -27,7 +27,7 @@ reviews that will never happen, and their absence is invisible in the report.
 |---|---|---|---|
 | **Claude** | `claude-opus-5`, effort **high** | complex | orchestration · complex implementation · planning · review |
 | **Codex (GPT)** | `gpt-5.6-sol`, reasoning effort **high** | complex | complex implementation · planning · review |
-| **agy** | `gemini-3.7-flash-high` | low risk | small frontend or backend tasks |
+| **agy** | `gemini-3.8-flash-high` | low risk | small frontend or backend tasks |
 | **copilot** | best available (leave `--model` unset) | low risk | small backend tasks · **use sparingly** |
 
 Set the complex tier deliberately: these two are the ones whose judgment you are paying for, so do

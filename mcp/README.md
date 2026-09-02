@@ -70,7 +70,7 @@ narrow, bounded jobs.
 - the final verdict on any delegated diff.
 
 **Default models** (set deliberately — the low-risk tier is cheap, not weak):
-`agy` = `gemini-3.7-flash-high` · `copilot` = best available (leave `--model` unset) ·
+`agy` = `gemini-3.8-flash-high` · `copilot` = best available (leave `--model` unset) ·
 `codex` = `gpt-5.6-sol` with `model_reasoning_effort = "high"` in `~/.codex/config.toml`.
 
 **What `agy` and `copilot` get:** one small, bounded, low-risk task at a time, with an explicit list

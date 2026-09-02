@@ -188,7 +188,7 @@ With the MCP servers configured, Claude stays the orchestrator and delegates nar
 
 | | Claude | Codex (GPT) | agy | copilot |
 |---|---|---|---|---|
-| Model | `claude-opus-5` high | `gpt-5.6-sol` high | `gemini-3.7-flash-high` | best available |
+| Model | `claude-opus-5` high | `gpt-5.6-sol` high | `gemini-3.8-flash-high` | best available |
 | Tier | complex | complex | low risk | low risk, **rare** |
 | Writes the plan | ✅ | ✅ | ❌ | ❌ |
 | Reviews the plan | ✅ (if Codex wrote it) | ✅ (if Claude wrote it) | ❌ | ❌ |
