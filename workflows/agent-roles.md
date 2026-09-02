@@ -27,7 +27,7 @@ reviews that will never happen, and their absence is invisible in the report.
 |---|---|---|---|
 | **Claude** | `claude-opus-5`, effort **high** | complex | orchestration · complex implementation · planning · review |
 | **Codex (GPT)** | `gpt-5.6-sol`, reasoning effort **high** | complex | complex implementation · planning · review |
-| **agy** | `gemini-3.7-flash-high` | low risk | small frontend or backend tasks |
+| **agy** | `gemini-3.8-flash-high` | low **and medium** risk | frontend or backend work whose shape is already decided |
 | **copilot** | best available (leave `--model` unset) | low risk | small backend tasks · **use sparingly** |
 
 Set the complex tier deliberately: these two are the ones whose judgment you are paying for, so do
@@ -58,7 +58,7 @@ blocks three different ways.
 The question is **risk and uncertainty**, not size. A three-line change to an authorization check is
 complex work; a hundred lines of a well-specified component is not.
 
-| Send to the **complex tier** (Claude / Codex) | Send to the **low-risk tier** (agy / copilot) |
+| Send to the **complex tier** (Claude / Codex) | Send to the **delegated tier** (agy / copilot) |
 |---|---|
 | anything in `{{RED_ZONE}}` or touching `{{CRITICAL_ASSET}}` | a component tweak with an obvious shape |
 | auth, permissions, authorization | copy, labels, formatting |
@@ -66,12 +66,35 @@ complex work; a hundred lines of a well-specified component is not.
 | concurrency, transactions, money, ledgers | a straightforward test |
 | **anything whose correct shape is still uncertain** | a mechanical refactor already decided in the plan |
 | the plan itself | wide read-only analysis |
+| the review of anything | **a medium slice — several files, real logic — when the plan already settled its shape** |
 
-**Within the low-risk tier:** `agy` takes frontend *or* backend; `copilot` takes backend, rarely.
+**Within the delegated tier:** `agy` takes frontend *or* backend, low **and medium**; `copilot` takes
+small backend work, rarely.
+
+### Why `agy` may take medium work — and the two conditions that are not negotiable
+
+Size was never the reason to hold work back. **Uncertainty was.** A hundred lines whose shape a plan
+already settled carries less risk than three lines where the right shape is still open, and the model
+serving this tier is now good enough that the plan, not the model, is the binding constraint.
+
+So the tier widens on two conditions, and neither is a preference:
+
+1. 🔴 **It never plans.** The shape of the change is decided by a complex-tier agent, reviewed by the
+   *other* complex-tier agent (`plan` → `plan-review`), and approved by `{{OWNER}}` before a single
+   file is delegated. `agy` receives a decided shape, never an open question.
+2. 🔴 **It never reviews — least of all itself.** Whatever comes back goes to a complex-tier agent
+   with `codereview`, against the git audit rather than against its report.
+
+Take either condition away and this stops being a wider tier and becomes an unsupervised one. What
+makes a medium slice safe is not the model's quality; it is that two other agents bracket it.
 
 🔴 **Uncertainty escalates, always.** If the right shape of the change is still open, no amount of
-model quality in the low-risk tier fixes it — delegation multiplies whatever the plan already got
+model quality in the delegated tier fixes it — delegation multiplies whatever the plan already got
 right, and multiplies its errors just as faithfully. Decide first, then delegate.
+
+**And what never moves, at any size:** `{{RED_ZONE}}`, `{{CRITICAL_ASSET}}`, auth and permissions,
+schema and migrations, shared contracts, concurrency, money and ledgers. Those are complex-tier work
+because of what they are, not because of how big the diff is.
 
 ---
 
@@ -86,10 +109,16 @@ The rule in one line: **the agent that wrote the code never signs off on it.**
 | **agy** | the session's orchestrator (whichever of the two is running) |
 | **copilot** | the session's orchestrator (whichever of the two is running) |
 
-Why the low-risk tier is reviewed by the orchestrator rather than the other complex agent: whoever
-delegated the task already holds the plan, the acceptance criterion and the file ownership list.
-Sending it to the other one buys a second opinion on a task that was, by definition, chosen for
+Why a **low-risk** delegated slice is reviewed by the orchestrator rather than the other complex
+agent: whoever delegated it already holds the plan, the acceptance criterion and the file ownership
+list. Sending it to the other one buys a second opinion on a task that was, by definition, chosen for
 being low risk — and costs a round trip on every delegated slice.
+
+🔴 **A medium slice goes to the OTHER complex agent, not to the orchestrator.** The reasoning above
+stops holding as soon as the slice is big enough to matter: the orchestrator wrote the plan that
+shaped it, so judging the implementation means judging its own decisions with the answer already in
+mind. That is the failure `plan-review` exists to prevent, arriving one step later. The extra round
+trip is the price of the wider tier — if it is not worth paying, the slice was not medium.
 
 **Escalate a low-risk review to the other complex agent when the diff turns out not to be low risk
 after all** — it touched something the plan did not anticipate, or the executor stopped mid-task and

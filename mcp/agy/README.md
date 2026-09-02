@@ -32,7 +32,7 @@ Requires `agy` on `PATH` and Node 18+. No npm dependencies.
 | Env var | Default | Purpose |
 |---|---|---|
 | `AGY_MCP_BIN` | `agy` | path to the agy binary |
-| `AGY_MCP_MODEL` | `gemini-3.7-flash-high` | default model |
+| `AGY_MCP_MODEL` | `gemini-3.8-flash-high` | default model |
 | `AGY_MCP_TIMEOUT_S` | `600` | seconds before the executor is killed |
 | `AGY_MCP_DEBUG` | — | file path to dump the exact args of the last call |
 
@@ -184,7 +184,7 @@ audit is the safety net, so the prompt does not have to be exhaustive.
 ## Reading the result
 
 ```
-agy_task SUCCESS · model gemini-3.7-flash-high
+agy_task SUCCESS · model gemini-3.8-flash-high
 FILES ACTUALLY CHANGED (from git, not self-reported): src/math.js
 FILES IT WAS ALLOWED TO CHANGE: src/math.js
 conversation_id: c4ba1c4b-…   (pass to agy_followup to continue)

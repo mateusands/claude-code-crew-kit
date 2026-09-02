@@ -11,10 +11,10 @@ import { serve } from "../lib/core.mjs";
 
 const BIN = process.env.AGY_MCP_BIN || "agy";
 // Best of the Google line; the low-risk tier still gets a capable model (see workflows/agent-roles.md).
-const DEFAULT_MODEL = process.env.AGY_MCP_MODEL || "gemini-3.7-flash-high";
+const DEFAULT_MODEL = process.env.AGY_MCP_MODEL || "gemini-3.8-flash-high";
 const DEFAULT_TIMEOUT_S = Number(process.env.AGY_MCP_TIMEOUT_S || 600);
 
-/** agy bakes the reasoning effort into most model names (`gemini-3.7-flash-high`, `-medium`,
+/** agy bakes the reasoning effort into most model names (`gemini-3.8-flash-high`, `-medium`,
  *  `-low`) and rejects `--model <suffixed> --effort <x>` as a contradiction. A few models carry
  *  no suffix (`claude-sonnet-4-6`, `claude-opus-4-6-thinking`), and for those `--effort` is the
  *  only way to say it. So the flag is conditional, not removable. */
@@ -32,8 +32,8 @@ serve({
   modelsArgs: ["models"],
 
   extraTaskProps: {
-    model: { type: "string", description: `agy model. Default ${DEFAULT_MODEL} (best of the Google line). Cheaper/faster for trivial edits: gemini-3.7-flash-low.` },
-    effort: { type: "string", enum: ["low", "medium", "high"], description: "Reasoning effort — ONLY for a model whose name does not already end in -low/-medium/-high. Every gemini model here bakes it into the name, so for those choose the model variant (gemini-3.7-flash-low for mechanical work) and leave this unset; passing both is refused. It applies to the unsuffixed models, e.g. claude-sonnet-4-6." },
+    model: { type: "string", description: `agy model. Default ${DEFAULT_MODEL} (best of the Google line). Cheaper/faster for trivial edits: gemini-3.8-flash-low.` },
+    effort: { type: "string", enum: ["low", "medium", "high"], description: "Reasoning effort — ONLY for a model whose name does not already end in -low/-medium/-high. Every gemini model here bakes it into the name, so for those choose the model variant (gemini-3.8-flash-low for mechanical work) and leave this unset; passing both is refused. It applies to the unsuffixed models, e.g. claude-sonnet-4-6." },
   },
   callOpts: (a) => ({ model: a.model || DEFAULT_MODEL, effort: a.effort }),
 
