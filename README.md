@@ -189,17 +189,24 @@ With the MCP servers configured, Claude stays the orchestrator and delegates nar
 | | Claude | Codex (GPT) | agy | copilot |
 |---|---|---|---|---|
 | Model | `claude-opus-5` high | `gpt-5.6-sol` high | `gemini-3.8-flash-high` | best available |
-| Tier | complex | complex | low risk | low risk, **rare** |
+| Tier | complex | complex | low **and medium** | low risk, **rare** |
 | Writes the plan | ✅ | ✅ | ❌ | ❌ |
 | Reviews the plan | ✅ (if Codex wrote it) | ✅ (if Claude wrote it) | ❌ | ❌ |
 | Complex / red-zone work | ✅ | ✅ | ❌ | ❌ |
 | Small, low-risk work | delegates | delegates | ✅ front/back | ✅ backend |
+| Medium work whose shape the plan settled | delegates | delegates | ✅ front/back | ❌ |
 | Reviews code | ✅ (Codex's + delegated) | ✅ (Claude's + delegated) | ❌ | ❌ |
 | Design review + runtime validation | ✅ (Playwright) | ✅ | ❌ no browser or terminal | ❌ |
 | **git — commit, push, merge** | ✅ orchestrator only | ✅ orchestrator only | ❌ **forbidden** | ❌ **forbidden** |
 
 🔴 **Nobody reviews their own work.** Claude's code goes to Codex, Codex's to Claude, and whatever
 `agy` or `copilot` wrote goes to the orchestrator running the session.
+
+`agy` may take a **medium** slice — several files, real logic — on two conditions that are the whole
+reason it is safe: the shape was decided by a plan another agent reviewed, and the result is reviewed
+by a complex-tier agent against the git audit. It never plans and it never reviews. Take either away
+and this is not a wider tier, it is an unsupervised one. Size was never what held work back;
+uncertainty was.
 
 See [`mcp/README.md`](mcp/README.md) for the delegation rules and what never gets delegated.
 

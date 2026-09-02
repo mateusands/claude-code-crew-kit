@@ -98,10 +98,16 @@ inventing a hash. See [`codex/README.md`](codex/README.md).
 | a straightforward test | schema, migrations, shared contracts |
 | a mechanical refactor with an obvious shape | concurrency, money, ledgers |
 | wide read-only analysis (`agy_ask` / `copilot_ask`) | **anything whose correct shape is still uncertain** |
+| **a medium slice to `agy` — several files, real logic — once the plan settled its shape** | the plan itself, and the review of anything |
 
 Delegation multiplies whatever the plan already got right. It does not decide anything, and it does
 not reduce what you owe the project: after every delegated task you still read the diff, run the
 suite, and exercise it.
+
+🔴 **The size of a slice was never the limit — its uncertainty was.** `agy` may take medium work
+precisely because two other agents bracket it: a plan written and reviewed by the complex tier goes
+in, and a `codereview` by a complex-tier agent comes out, judged against the git audit rather than
+against the executor's report. Without both, a medium slice is not delegated, it is abandoned.
 
 ## Long delegated calls, and the subagent trade-off
 
