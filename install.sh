@@ -63,6 +63,8 @@ copy_if_absent() {
     cp "$1" "$2"
   fi
 }
+mkdir -p "$TARGET_ROOT/.github"
+copy_if_absent "$SOURCE_DIR/pull-request.md.template" "$TARGET_ROOT/.github/pull_request_template.md"
 copy_if_absent "$SOURCE_DIR/AGENTS.md.template" "$TARGET_ROOT/AGENTS.md"
 copy_if_absent "$SOURCE_DIR/CLAUDE.md.template" "$TARGET_ROOT/CLAUDE.md"
 copy_if_absent "$SOURCE_DIR/START.md" "$TARGET_ROOT/START.md"

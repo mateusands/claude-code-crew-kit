@@ -63,6 +63,7 @@ update" changes an outcome.
 ├── AGENTS.md.template          # the shared contract, read by every agent
 ├── CLAUDE.md.template          # thin — imports AGENTS.md, plus Claude-only notes
 ├── crew-info.md.template       # the mode and the roster → .crew/info.md
+├── pull-request.md.template    # PR body → .github/pull_request_template.md, so GitHub fills it
 ├── SECURITY.md.template        # vulnerability disclosure policy (public repos)
 ├── install.sh                  # installs the kit into a project, and stamps the version
 ├── settings.json               # default permissions (allow reads, deny the irreversible)
@@ -281,6 +282,23 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 | `{{APPROVED_VENDORS}}` | third parties already approved | `AWS, OpenAI` |
 | `{{INCIDENT_DEADLINE}}` | incident notification deadline | `24h` · `immediately` |
 | `{{CRITICAL_ASSET}}` | what breaks expensively (a ledger, a user's file…) | `user files` |
+
+---
+
+## The PR body
+
+`install.sh` puts [`pull-request.md.template`](pull-request.md.template) at
+`.github/pull_request_template.md`, which is where GitHub reads it from — a convention kept in
+`.claude/` reaches the agents and never reaches the team.
+
+Four rules do the work. **No internal-tool attribution** — not "the reviewer agent found", not "the
+second opinion said": the PR is read as one developer's work, and authority comes from the proof, not
+from who produced the finding. **Result, not intention** — "ran the suite" is worth nothing, "30
+tests, 30 pass" is. **Declare what was not covered**, because a PR listing only what passed is read
+as full coverage. And **say what does NOT change**, or a fix reads as a refactor.
+
+The traps block at the bottom is the part that decays: fill it with what has actually cost this
+project a round, with dates. A rule with no incident attached is a rule people skim.
 
 ---
 

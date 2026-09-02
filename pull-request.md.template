@@ -1,0 +1,67 @@
+## Contexto
+
+O problema em uma frase: quem sofre, o que vê hoje, o que deveria ver.
+Se for bug, como reproduzir. Se for melhoria, o que motivou agora.
+
+## O que muda
+
+A solução e por que esta forma, não outra. Cite `arquivo:linha` no que for central.
+
+## O que NÃO muda
+
+Fronteira explícita. Sem isto, um PR de correção é lido como refactor.
+
+## Como validar
+
+| Nível | O que cobre | Resultado |
+|---|---|---|
+| N1 | `{{CMD_TEST}}` + `{{CMD_TYPECHECK}}` + `{{CMD_BUILD}}` | |
+| N2 | O artefato de produção abre — não o de desenvolvimento | |
+| N3 | Fluxo ponta a ponta com dado real, em `{{LOCAL_URL}}` | |
+| N4 | Ambiente hostil, quando se aplica: outro motor, outra viewport, página hospedeira | |
+
+**Não coberto:** o que ficou de fora e por quê.
+
+## Mudança de comportamento
+
+Sim/Não. Se sim: o que a pessoa usuária passa a ver de diferente.
+
+## Risco e rollback
+
+O pior caminho é o que PARECE sucesso. Aponte o SHA de partida para `git revert`.
+Se tocou `{{RED_ZONE}}` ou `{{CRITICAL_ASSET}}`, diga aqui.
+
+## Ordem de merge
+
+Se empilha em outro PR, diga qual e por que a ordem importa.
+
+<!--
+═══════════════════════════════════════════════════════════════════════════════
+REGRAS DE ESCRITA — apague este bloco antes de abrir o PR
+
+Sem atribuição a ferramenta interna. Nada de "o Codex apontou", "revisão adversarial",
+"o Gemini sugeriu". Quem lê é o time, e o PR é o trabalho de um dev. O achado entra pelo que
+é e por como foi provado — a prova é o que dá autoridade, não quem a produziu.
+
+Poucos emotes. No máximo onde marcam severidade real numa tabela. Corpo de PR não é chat.
+
+Resultado, não intenção. "Rodei o N2" não vale nada; "N2: monta, console limpo" vale.
+Cole o número.
+
+Declare o que NÃO foi coberto. Um PR que lista só o que passou é lido como cobertura total.
+O limite escrito vale mais que o limite escondido.
+
+Título: `tipo(escopo): descrição objetiva`, e `[n/N]` quando a PR faz parte de uma fila.
+
+───────────────────────────────────────────────────────────────────────────────
+ARMADILHAS DESTE PROJETO
+
+Suíte verde não é prova de nada que rode em ambiente diferente do da suíte. Se o incidente
+existiu, escreva-o aqui com data — regra sem história anexada é regra que se pula.
+
+<símbolo> — <o que custou> → <o que checar antes de colar o resultado>
+
+Teste que some precisa de contabilidade. Se a suíte foi de N para M, diga de onde saíram os
+que faltam, arquivo por arquivo. Teste apagado sem justificativa escrita é regressão disfarçada.
+═══════════════════════════════════════════════════════════════════════════════
+-->
