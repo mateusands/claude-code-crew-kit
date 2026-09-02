@@ -4,7 +4,16 @@ Runs the real MCP servers over stdio, against throwaway git repositories, with a
 executor CLI — so the suite costs nothing and needs no model, no network and no account.
 
 ```bash
-node --test tests/
+npm test
+```
+
+🔴 **Not `node --test tests/`.** The directory form needs a recent Node; on **22.23.1** it fails with
+`Cannot find module '.../tests'` because the runner treats the path as an entry module instead of a
+directory to scan. That was the first command someone evaluating the kit ran, and it made a green
+suite look broken. The script above names the files explicitly, which works everywhere:
+
+```bash
+node --test tests/*.test.mjs      # what `npm test` runs · verified on Node 22 and 26
 ```
 
 | File | What it covers |

@@ -3,9 +3,9 @@
  * The server under test is spawned exactly as an MCP client would spawn it.
  */
 import { spawn } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 
 export const REPO_ROOT = new URL("../", import.meta.url).pathname.replace(/\/$/, "");
@@ -17,7 +17,11 @@ export function makeRepo(files) {
   git("init", "-q", "-b", "main", ".");
   git("config", "user.email", "t@t.co");
   git("config", "user.name", "t");
-  for (const [name, body] of Object.entries(files)) writeFileSync(join(dir, name), body);
+  for (const [name, body] of Object.entries(files)) {
+    // Fixtures may name nested paths — a real repo has directories.
+    mkdirSync(dirname(join(dir, name)), { recursive: true });
+    writeFileSync(join(dir, name), body);
+  }
   git("add", "-A");
   git("commit", "-q", "-m", "baseline");
   return { dir, git, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
