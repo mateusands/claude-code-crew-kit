@@ -104,7 +104,7 @@ update" changes an outcome.
 | `surface-sweeper` | where does this data appear, and do the surfaces agree? |
 | `finding-verifier` | does this review finding survive an attempt to refute it? |
 | `implementer` | implements one slice of an approved plan, owning an exclusive set of files |
-| `agy-runner` | supervises one task delegated to the agy executor, without blocking the main session |
+| `agy-runner` | supervises one task delegated to the agy executor — audit read before the report, cut-off run retried, diff verified against the claim |
 
 ### The 4 commands
 

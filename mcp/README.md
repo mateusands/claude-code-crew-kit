@@ -3,6 +3,12 @@
 One folder per server, each with its own `.mcp.json` and README. Copy the ones you want into the
 project root, or use the combined [`.mcp.json`](.mcp.json) here and delete what you do not need.
 
+`agy`, `codex` and `copilot` are thin **backends** over [`lib/core.mjs`](lib/core.mjs), which holds the
+charter, the git audit, the concurrency epochs, the job handles and the MCP transport in one copy. A
+backend says only how to invoke its CLI, how to read its output, and what its containment actually is
+— about 70–100 lines each. Three near-identical servers is how a rule gets fixed in one of them and
+stays broken in the other two.
+
 ```bash
 cp mcp/.mcp.json /path/to/repo/.mcp.json     # playwright + agy + codex + copilot + context7
 # or just one:
@@ -23,7 +29,7 @@ plumbing.
 |---|---|---|---|
 | **playwright** | [`playwright/`](playwright/) | the browser the review skills assume | `npx` |
 | **agy** | [`agy/`](agy/) | delegated executor for small, low-risk tasks | `agy` on PATH, Node 18+ |
-| **codex** | [`codex/`](codex/) | second reviewer / second opinion | `codex` on PATH, signed in |
+| **codex** | [`codex/`](codex/) | audited executor **and** second reviewer | `codex` on PATH, signed in, Node 18+ |
 | **copilot** | [`copilot/`](copilot/) | second executor for delegated writes | `copilot` on PATH, signed in, Node 18+ |
 | **context7** | [`context7/`](context7/) | version-accurate library docs for `backend`/`frontend` Step 0 | `npx` |
 | **shadcn** | [`shadcn/`](shadcn/) | component registry access — **only if the project has `components.json`** | `npx` |
@@ -77,8 +83,11 @@ it was measured ignoring its own `--deny-tool` git blocks, and once reported a c
 with a fabricated hash. Its wrapper compensates, and its report is labelled narration rather than
 evidence.
 
-**What `codex` gets:** a second review pass. Keep it `read-only` unless you have read
-[`codex/README.md`](codex/README.md) on why its sandbox does not stop `git commit`.
+**What `codex` gets:** either delegated work under the wrapper, or a second review pass. It is the
+only executor that can run commands — inside its own OS sandbox — so it can test its own work before
+reporting. Containment is measured, not assumed: on codex-cli 0.152.0 `--sandbox workspace-write`
+mounts `.git` read-only and a commit cannot happen, and it reports the failure honestly rather than
+inventing a hash. See [`codex/README.md`](codex/README.md).
 
 ## Delegate, or do it yourself?
 
@@ -94,19 +103,48 @@ Delegation multiplies whatever the plan already got right. It does not decide an
 not reduce what you owe the project: after every delegated task you still read the diff, run the
 suite, and exercise it.
 
-## Not blocking on a delegated task
+## Long delegated calls, and the subagent trade-off
 
-`agy_task` is synchronous — it blocks for as long as the executor runs. To keep working meanwhile,
-spawn the **`agy-runner`** subagent in the background, one per slice. It drives the agy call, reads
-the git audit, retries a cut-off run once, reviews the diff, and reports back. See
-[`../agents/agy-runner.md`](../agents/agy-runner.md).
+**Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
+two minutes: you get a task id immediately, keep working, and the result comes back later as a task
+notification. It shows up in `/tasks`, and it does not survive leaving the session. So `agy_task`
+called from the main session is already effectively asynchronous — there is nothing to work around.
+
+🔴 **A call made from a subagent never backgrounds.** Neither do calls to IDE servers, calls in
+non-interactive/headless mode (unless `CLAUDE_AUTO_BACKGROUND_TASKS=1`), or a call waiting on an open
+elicitation dialog. Routing a delegation through **`agy-runner`** buys supervision — the git audit
+read before the executor's report, a cut-off run retried once, the diff verified against the claim,
+a judgement returned — and costs you the backgrounding. Spawn it for the judgement, never to avoid
+waiting. See [`../agents/agy-runner.md`](../agents/agy-runner.md).
+
+**To fan out without waiting**, use `agy_start` (a handle in milliseconds) and `agy_await` (the
+reports, audit included) instead of `agy_task`. Jobs in one repository are audited against a shared
+baseline and attributed by declared ownership, so parallel work no longer produces false violations —
+and two jobs claiming the same file are refused. See [`agy/README.md`](agy/README.md).
+
+**The timeout ladder**, in the order things actually fire:
+
+| Limit | Default | What it does |
+|---|---|---|
+| `timeout_s` per call · `AGY_MCP_TIMEOUT_S` / `COPILOT_MCP_TIMEOUT_S` | `600` | **our wrapper kills the executor first** — this, not any client limit, is what cuts a long delegation today |
+| `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS` | `120000` | when the client backgrounds a main-session call · `0` disables |
+| `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | — | `1` turns background tasks off entirely |
+| `CLAUDE_CODE_MCP_TOOL_IDLE_TIMEOUT` | 30 min (stdio) · 5 min (HTTP/SSE) | aborts a call that sends neither a response nor a progress notification for that long · `0` disables |
+| `MCP_TOOL_TIMEOUT` | ~28 h | wall clock per tool call |
+| `timeout` per server in `.mcp.json` | — | hard wall-clock limit |
+
+Progress notifications reset the idle timer; they do **not** extend the wall clock.
+
+> None of this is the MCP **Tasks** extension — Claude Code does not implement it. The backgrounding
+> above is the client's own feature, so it depends on the client version, not on the spec.
 
 ## Adding another agent (Kimi, DeepSeek, Qwen…)
 
 Follow the [`onboard-agent`](../skills/onboard-agent/SKILL.md) skill. It probes the CLI's six
 relevant capabilities, runs the containment battery — including **the commit test** and **the
-fabrication test** — and only then has you copy [`agy/server.mjs`](agy/server.mjs) or
-[`copilot/server.mjs`](copilot/server.mjs) and swap the backend.
+fabrication test** — and only then has you write a **backend** for [`lib/core.mjs`](lib/core.mjs).
+Not a copy of an existing server: a backend is ~70–100 lines saying how to invoke that CLI, how to
+read its output, and which containment flag was proved to work.
 
 The human must have the CLI installed and logged in first; you cannot run an OAuth flow for them.
 

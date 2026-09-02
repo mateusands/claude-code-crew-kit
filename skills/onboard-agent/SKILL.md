@@ -240,9 +240,24 @@ decision instead of re-deriving it.
 
 ## 5. Build the server
 
-Copy the closest existing wrapper — [`../../mcp/agy/server.mjs`](../../mcp/agy/server.mjs) (permission
--restricted CLI) or [`../../mcp/copilot/server.mjs`](../../mcp/copilot/server.mjs) (tool-removal CLI)
-— into `mcp/<agent>/server.mjs` and change only the backend.
+🔴 **Do not copy an existing server.** The charter, the git audit, the concurrency epochs, the job
+handles and the MCP transport live once, in
+[`../../mcp/lib/core.mjs`](../../mcp/lib/core.mjs). Write a **backend** instead — 70 to 100 lines in
+`mcp/<agent>/server.mjs` that calls `serve({...})` and answers only what makes this CLI different:
+
+| Field | What it says |
+|---|---|
+| `bin` · `defaultTimeoutS` | which binary, and when to kill it |
+| `canRunCommands` | shapes the charter — a CLI with a shell gets a different prohibition than one without |
+| `scratchWarning` | what "reported success but changed nothing" most likely means for this CLI |
+| `resumeIdLabel` | what its session id is called (`conversation_id`, `thread_id`, `session_id`…) |
+| `buildArgs()` | the argv, **including the containment flag §3 proved actually works** |
+| `parseResult()` | how to get the reply, the session id and the usage out of its output |
+| `diagnose()` | translate its failure modes into something the orchestrator can act on |
+
+Read [`../../mcp/agy/server.mjs`](../../mcp/agy/server.mjs) as the shortest example. Copying a whole
+server instead is how a rule gets fixed in one of them and stays broken in the others — the exact
+thing `twin-hunter` exists to find.
 
 **Reuse unchanged** (this is most of the file, and it is the part that carries the guarantees):
 `run()` · `gitSnapshot()` · `auditSnapshots()` · `isOwned()` · the charter · the report formatter ·
