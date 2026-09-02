@@ -14,9 +14,9 @@
       ]
     },
     "codex": {
-      "command": "codex",
+      "command": "node",
       "args": [
-        "mcp-server"
+        "/absolute/path/to/.claude/mcp/codex/server.mjs"
       ]
     },
     "copilot": {

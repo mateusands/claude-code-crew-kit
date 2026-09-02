@@ -12,6 +12,8 @@ node --test tests/
 | `helpers.mjs` | an MCP stdio client, and git fixtures |
 | `audit-concurrency.test.mjs` | jobs running at once must not accuse each other |
 | `audit-integrity.test.mjs` | …and the audit must still catch what it is for |
+| `job-handles.test.mjs` | `*_start` returns at once, `*_await` settles, `*_cancel` says the tree is left half-written |
+| `backends.test.mjs` | the same contract asserted against **every** backend on `mcp/lib/core.mjs` |
 
 🔴 **The second file is the one that matters.** Making concurrent jobs stop accusing each other means
 teaching the audit to ignore something, and an exemption that widens by accident is how the whole

@@ -3,6 +3,12 @@
 One folder per server, each with its own `.mcp.json` and README. Copy the ones you want into the
 project root, or use the combined [`.mcp.json`](.mcp.json) here and delete what you do not need.
 
+`agy`, `codex` and `copilot` are thin **backends** over [`lib/core.mjs`](lib/core.mjs), which holds the
+charter, the git audit, the concurrency epochs, the job handles and the MCP transport in one copy. A
+backend says only how to invoke its CLI, how to read its output, and what its containment actually is
+— about 70–100 lines each. Three near-identical servers is how a rule gets fixed in one of them and
+stays broken in the other two.
+
 ```bash
 cp mcp/.mcp.json /path/to/repo/.mcp.json     # playwright + agy + codex + copilot + context7
 # or just one:
@@ -23,7 +29,7 @@ plumbing.
 |---|---|---|---|
 | **playwright** | [`playwright/`](playwright/) | the browser the review skills assume | `npx` |
 | **agy** | [`agy/`](agy/) | delegated executor for small, low-risk tasks | `agy` on PATH, Node 18+ |
-| **codex** | [`codex/`](codex/) | second reviewer / second opinion | `codex` on PATH, signed in |
+| **codex** | [`codex/`](codex/) | audited executor **and** second reviewer | `codex` on PATH, signed in, Node 18+ |
 | **copilot** | [`copilot/`](copilot/) | second executor for delegated writes | `copilot` on PATH, signed in, Node 18+ |
 | **context7** | [`context7/`](context7/) | version-accurate library docs for `backend`/`frontend` Step 0 | `npx` |
 | **shadcn** | [`shadcn/`](shadcn/) | component registry access — **only if the project has `components.json`** | `npx` |
@@ -77,8 +83,11 @@ it was measured ignoring its own `--deny-tool` git blocks, and once reported a c
 with a fabricated hash. Its wrapper compensates, and its report is labelled narration rather than
 evidence.
 
-**What `codex` gets:** a second review pass. Keep it `read-only` unless you have read
-[`codex/README.md`](codex/README.md) on why its sandbox does not stop `git commit`.
+**What `codex` gets:** either delegated work under the wrapper, or a second review pass. It is the
+only executor that can run commands — inside its own OS sandbox — so it can test its own work before
+reporting. Containment is measured, not assumed: on codex-cli 0.152.0 `--sandbox workspace-write`
+mounts `.git` read-only and a commit cannot happen, and it reports the failure honestly rather than
+inventing a hash. See [`codex/README.md`](codex/README.md).
 
 ## Delegate, or do it yourself?
 
@@ -133,8 +142,9 @@ Progress notifications reset the idle timer; they do **not** extend the wall clo
 
 Follow the [`onboard-agent`](../skills/onboard-agent/SKILL.md) skill. It probes the CLI's six
 relevant capabilities, runs the containment battery — including **the commit test** and **the
-fabrication test** — and only then has you copy [`agy/server.mjs`](agy/server.mjs) or
-[`copilot/server.mjs`](copilot/server.mjs) and swap the backend.
+fabrication test** — and only then has you write a **backend** for [`lib/core.mjs`](lib/core.mjs).
+Not a copy of an existing server: a backend is ~70–100 lines saying how to invoke that CLI, how to
+read its output, and which containment flag was proved to work.
 
 The human must have the CLI installed and logged in first; you cannot run an OAuth flow for them.
 

@@ -238,8 +238,9 @@ Order, each failing before its fix exists:
 change restores per-call bracketing exactly.
 
 **Rollout order:** ~~probe assumption 5~~ ✅ → ~~harness + failing tests~~ ✅ →
-~~audit attribution~~ ✅ → ~~job tools~~ ✅ → ~~lifecycle fix~~ ✅ → ~~docs~~ ✅ → **port to
-`copilot`, as a separate change** (still open).
+~~audit attribution~~ ✅ → ~~job tools~~ ✅ → ~~lifecycle fix~~ ✅ → ~~docs~~ ✅ → ~~port to
+`copilot`~~ ✅ — done by extracting the shared core rather than by copying, once a third executor
+(`codex`) made the duplication impossible to ignore.
 
 ### Done so far
 
@@ -339,10 +340,12 @@ run against the real CLI:
 
 Two jobs on the real CLI finished in **9 s** where serial execution took ~18 s.
 
-`agy_start` · `agy_await` · `agy_status` · `agy_result` · `agy_cancel`, over an in-memory registry
-using the MCP Tasks lifecycle names. `copilot` is deliberately not ported yet: its CLI does support
-`--effort` and `--model` independently (checked once node was repaired), so it has no defect to fix,
-but the epoch rework should run on `agy` against real work before being duplicated.
+`*_start` · `*_await` · `*_status` · `*_result` · `*_cancel`, over an in-memory registry using the
+MCP Tasks lifecycle names — on **all three** executors, because the servers now share one core.
+
+`mcp/lib/core.mjs` holds the charter, the git audit, the epochs, the handles and the transport.
+`agy` went from ~880 lines to 105, `copilot` from 548 to 68, and `codex` arrived as 91 rather than as
+a third copy. The suite ran green through the extraction, which is exactly what it was written for.
 
 ---
 
