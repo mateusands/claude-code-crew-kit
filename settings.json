@@ -1,5 +1,9 @@
 {
   "$comment": "Default permissions. 'allow' = reading and verification, which change nothing and need no prompt. 'deny' = what the fleet's discipline forbids without an explicit order. 'ask' = irreversible or externally visible. Adjust the test/build commands to the project's package manager.",
+  "env": {
+    "$comment": "A delegated job returns a handle immediately, but an MCP server cannot wake this session — the completion notification comes from the host backgrounding the *_await call. At the 2-minute default, calling await right after start costs two minutes of a blocked turn, so people poll instead and lose the notification entirely. Lower it and await frees the turn in seconds while still delivering the result as a notification. Applies to every MCP server, not just the executors.",
+    "CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS": "15000"
+  },
   "permissions": {
     "allow": [
       "Bash(git status:*)",

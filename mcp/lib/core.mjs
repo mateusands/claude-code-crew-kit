@@ -480,7 +480,7 @@ function makeTools(b) {
     { name: `${b.name}_task`, description: `Delegate ONE small, low-risk implementation task to the ${b.name} executor, which may write only to the files you list. ${delegationRules} This call BLOCKS until it finishes — use ${b.name}_start to fan out instead.`, inputSchema: taskSchema },
     { name: `${b.name}_start`, description: `Start a delegated task and get a HANDLE back immediately instead of waiting. Same rules, charter and git audit as ${b.name}_task. Use it to fan several disjoint slices out at once, or whenever you want to keep working — or keep talking to the human — while the executor runs. Two jobs may not declare overlapping files: the audit could not then say which one wrote what, so the second call is refused. 🔴 The handle says the executor STARTED and nothing more; the work is unverified until you read its report with ${b.name}_await, and then read the diff yourself.`, inputSchema: taskSchema },
     { name: `${b.name}_await`, description: `Wait for jobs started with ${b.name}_start and return their full reports, audit included. Omit job_ids to wait for every job still running. It blocks, and your host may move it to the background and notify you when it settles. Waiting costs no wall clock: the executors have been running since ${b.name}_start.`, inputSchema: { type: "object", properties: { job_ids: { type: "array", items: { type: "string" }, description: "Handles. Omit to wait for all running jobs." } } } },
-    { name: `${b.name}_status`, description: "Peek at delegated jobs without waiting — state, elapsed seconds and declared ownership. Omit job_id to list them all. Never blocks.", inputSchema: { type: "object", properties: { job_id: { type: "string" } } } },
+    { name: `${b.name}_status`, description: `Peek at delegated jobs without waiting — state, elapsed seconds and declared ownership. Omit job_id to list them all. Never blocks. 🔴 Not a substitute for ${b.name}_await and not something to call in a loop: it answers only when you think to ask, so polling it is how you end up watching a job instead of working while it runs.`, inputSchema: { type: "object", properties: { job_id: { type: "string" } } } },
     { name: `${b.name}_result`, description: "Read a finished job's report again without waiting. Says so if the job is still running.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
     { name: `${b.name}_cancel`, description: "Kill a running job. 🔴 Whatever the executor already wrote STAYS in the working tree, half-done — cancelling is not undoing. Read the diff afterwards.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
     { name: `${b.name}_ask`, description: `Ask the ${b.name} executor a READ-ONLY question about a codebase — analysis, a broad search, a summary, a second opinion. It writes nothing, and a git audit confirms that. Good for offloading wide reading you would otherwise spend your own context on. Its answer is INPUT, not a verdict: verify anything you are going to act on.`, inputSchema: { type: "object", properties: { question: { type: "string", description: "The question. Ask for file:line citations so you can verify the answer." }, cwd: { type: "string" }, context_files: { type: "array", items: { type: "string" } }, ...b.extraTaskProps, reserved_files: { type: "array", items: { type: "string" }, description: "Paths you will be editing yourself while this read-only call runs." }, orchestrator_writing: { type: "boolean", description: "True if you will keep working in the tree; changes then come back as unattributed rather than as a read-only violation." }, timeout_s: { type: "number" } }, required: ["question", "cwd"] } },
@@ -599,7 +599,17 @@ function makeImpl(b) {
           maybeExit();
         });
       JOBS.set(id, rec);
-      return { isError: false, text: `STARTED ${id} — owns ${a.owned_files.join(", ")}\n\nThe executor is running. Nothing about this result says the work is correct or even started well.\nCall ${b.name}_await with this id when you want the report; ${b.name}_status to peek without waiting.` };
+      return {
+        isError: false,
+        text:
+          `STARTED ${id} — owns ${a.owned_files.join(", ")}\n\n` +
+          `The executor is running. Nothing here says the work is correct, or even that it started well.\n\n` +
+          `HOW YOU FIND OUT IT FINISHED: call ${b.name}_await. Nothing pushes a notification at you — an MCP\n` +
+          `server cannot wake this session — so waiting is the mechanism, not a fallback. ${b.name}_await returns\n` +
+          `INSTANTLY for a job that already finished, and when the job is still running your host backgrounds the\n` +
+          `call and notifies you as soon as it settles. Start everything you mean to start, then await; do not poll\n` +
+          `${b.name}_status in a loop, which burns turns and tells you nothing await would not have.`,
+      };
     },
 
     [`${b.name}_await`]: async (a) => {
