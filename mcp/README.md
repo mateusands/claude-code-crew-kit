@@ -146,6 +146,30 @@ read before the executor's report, a cut-off run retried once, the diff verified
 a judgement returned — and costs you the backgrounding. Spawn it for the judgement, never to avoid
 waiting. See [`../agents/agy-runner.md`](../agents/agy-runner.md).
 
+### 🔴 How you learn a delegated job finished
+
+Nothing pushes a notification at you. **An MCP server cannot wake this session** — it only answers
+what it is asked — so the completion signal has to come from the host, and it comes from the host
+backgrounding a call that is waiting. That call is `*_await`.
+
+```
+*_start × N   → handles in milliseconds, session free, executors running
+   …your own work…
+*_await       → returns INSTANTLY if they already finished; otherwise the host backgrounds it
+                 and notifies you the moment it settles
+```
+
+Reported from the field: *"o `codex_start` devolve o handle, mas o término não me avisa — eu preciso
+perguntar com `codex_status`."* That is what happens when `await` looks like blocking, so nobody calls
+it. At the **2-minute** default backgrounding threshold, awaiting right after starting really does
+cost two minutes of a stalled turn — which is why `settings.json` now ships
+`CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000`. With it, `await` frees the turn in seconds **and** still
+delivers the result as a notification.
+
+🔴 **Do not poll `*_status` in a loop.** It never blocks, which makes it feel like the safe choice, but
+it answers only when you think to ask — so polling turns "work while it runs" back into "watch it
+run", and burns a turn each time. `*_status` is for a single glance; `*_await` is how you find out.
+
 **To fan out without waiting**, use `agy_start` (a handle in milliseconds) and `agy_await` (the
 reports, audit included) instead of `agy_task`. Jobs in one repository are audited against a shared
 baseline and attributed by declared ownership, so parallel work no longer produces false violations —
