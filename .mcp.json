@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "agy": {
+      "command": "node",
+      "args": ["mcp/agy/server.mjs"]
+    },
+    "codex": {
+      "command": "node",
+      "args": ["mcp/codex/server.mjs"]
+    }
+  }
+}
