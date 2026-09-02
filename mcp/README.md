@@ -127,6 +127,11 @@ Declaring one path is precise and leaves the verdict hard everywhere else; the f
 turns unowned changes into a stated ambiguity. Declare nothing and the verdict stays hard, which is
 right — by default the orchestrator is not writing.
 
+Exercised against the real executor, not only in the suite: one delegated file, three files written
+by the orchestrator while it ran. Undeclared → three violations and the executor's own file correctly
+credited; `orchestrator_writing` → no violations, the three listed as unattributed; `reserved_files`
+→ no violations and no ambiguity.
+
 ## Long delegated calls, and the subagent trade-off
 
 **Claude Code v2.1.212+ backgrounds an MCP call made from the main conversation** once it runs past
