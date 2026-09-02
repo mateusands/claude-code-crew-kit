@@ -138,17 +138,33 @@ export function isOwned(file, owned) {
 /** Do two ownership entries cover any of the same ground, in either direction? */
 const pathsOverlap = (x, y) => isOwned(x, [y]) || isOwned(y, [x]);
 
-export function auditSnapshots(before, after, owned, ownedByOthers = []) {
+/**
+ * @param reserved  paths the ORCHESTRATOR declared it would touch itself
+ * @param orchestratorWriting  the orchestrator said it is working in the tree in parallel
+ *
+ * 🔴 git records that a file changed, never who changed it. Delegation exists so the
+ * orchestrator can keep working, and when it does, its own edits look exactly like an
+ * executor stepping out of scope. Reporting those as charter violations is a claim the
+ * audit cannot support, and one wrong finding burns trust in every other one.
+ *
+ * So the hard verdict is the DEFAULT — an unowned change is a violation, because by
+ * default the orchestrator is not writing — and it degrades only when the orchestrator
+ * says otherwise, path by path (`reserved`) or wholesale (`orchestratorWriting`).
+ * Whoever declares nothing keeps the strong guarantee.
+ */
+export function auditSnapshots(before, after, owned, ownedByOthers = [], { reserved = [], orchestratorWriting = false } = {}) {
   const violations = [];
+  const unattributed = [];
   const touched = [];
   if (!before.repo || !after.repo) {
-    return { violations, touched, note: "Not a git repository — no git audit was possible. File ownership was NOT verified." };
+    return { violations, unattributed, touched, note: "Not a git repository — no git audit was possible. File ownership was NOT verified." };
   }
 
   if (before.head !== after.head) {
     violations.push(
       `GIT HISTORY CHANGED — HEAD moved from ${before.head.slice(0, 8)} to ${after.head.slice(0, 8)}. ` +
-      `The executor ran a commit/merge/rebase/reset. This is forbidden; git belongs to the orchestrator.`
+      `The executor is not supposed to be able to do this, so treat it as a containment failure until proven otherwise` +
+      (orchestratorWriting ? " — though you did say you were working in parallel, and a commit of your own looks identical here." : ".")
     );
   }
   if (before.remotes !== after.remotes) violations.push("REMOTE REFS CHANGED — a push or fetch altered refs/remotes. Pushing is forbidden.");
@@ -163,9 +179,18 @@ export function auditSnapshots(before, after, owned, ownedByOthers = []) {
     // business and is audited in that job's own report — crediting it here would
     // manufacture a violation out of legitimate parallel work.
     if (isOwned(p, ownedByOthers)) continue;
+    // The orchestrator said this path is its own. Its edits are not the executor's business.
+    if (isOwned(p, reserved)) continue;
     touched.push(p);
-    if (owned.length > 0 && !isOwned(p, owned)) {
-      violations.push(`OUT-OF-SCOPE WRITE — \`${p}\` was modified but is not in the owned files list.`);
+    if (owned.length > 0 && isOwned(p, owned)) continue;
+    if (orchestratorWriting) {
+      unattributed.push(p);
+    } else {
+      violations.push(
+        `OUT-OF-SCOPE WRITE — \`${p}\` was modified but is not in the owned files list. ` +
+        `If this was YOUR OWN edit while the executor ran, the audit cannot tell — pass \`reserved_files\` ` +
+        `with the paths you are touching, or \`orchestrator_writing: true\`, and it will stop reading your work as a violation.`
+      );
     }
   }
 
@@ -176,7 +201,7 @@ export function auditSnapshots(before, after, owned, ownedByOthers = []) {
     }
   }
 
-  return { violations, touched, note: null };
+  return { violations, unattributed, touched, note: null };
 }
 
 /* ─────────────────────────── concurrency epochs ───────────────────────────
@@ -332,7 +357,7 @@ function buildTaskPrompt(b, { task, owned, context, acceptance, notes, cwd, skil
   return parts.join("\n");
 }
 
-function report(b, { header, violations, touched, declared, execText, usage, resumeId, auditNote, diagnostic }) {
+function report(b, { header, violations, unattributed, touched, declared, execText, usage, resumeId, auditNote, diagnostic }) {
   const out = [];
   if (violations.length) {
     out.push("🔴 CHARTER VIOLATIONS — do not accept this result as-is:");
@@ -345,6 +370,14 @@ function report(b, { header, violations, touched, declared, execText, usage, res
   out.push(header);
   if (diagnostic) { out.push(""); out.push("⚠️  " + diagnostic); out.push(""); }
   if (auditNote) out.push("⚠️  " + auditNote);
+  if (unattributed && unattributed.length) {
+    out.push("");
+    out.push("⚖️  UNATTRIBUTED CHANGES — you said you were working in the tree, so the audit cannot tell");
+    out.push("    whether these are yours or the executor stepping out of scope. Only you know:");
+    for (const u of unattributed) out.push("  • " + u);
+    out.push("    Declaring `reserved_files` next time removes the ambiguity instead of narrating it.");
+    out.push("");
+  }
   out.push(`FILES ACTUALLY CHANGED (from git, not self-reported): ${touched.length ? touched.join(", ") : "none"}`);
   if (declared && declared.length) out.push(`FILES IT WAS ALLOWED TO CHANGE: ${declared.join(", ")}`);
   if (resumeId) out.push(`${b.resumeIdLabel}: ${resumeId}   (pass to ${b.name}_followup to continue)`);
@@ -429,6 +462,8 @@ function makeTools(b) {
       notes: { type: "string", description: "Constraints from the plan: conventions to follow, what NOT to touch, gotchas." },
       skills: { type: "array", items: { type: "string" }, description: `Project skills the executor must read and follow, by directory name (e.g. ["coder"], ["coder","frontend"]). Keep it to 1-2. Use \`coder\` for any implementation task plus \`frontend\` or \`backend\` for the layer. Do NOT pass \`design-review\` or \`local-testing\`: they need a browser and a terminal the executor does not have.` },
       ...b.extraTaskProps,
+      reserved_files: { type: "array", items: { type: "string" }, description: "Paths YOU, the orchestrator, will be editing while this runs. git records that a file changed but never who changed it, so without this your own concurrent edits come back as the executor writing out of scope. Declaring them keeps the verdict hard for everything else." },
+      orchestrator_writing: { type: "boolean", description: "Set true when you will keep working in this repository and cannot say in advance where. Changes that belong to no job are then reported as UNATTRIBUTED rather than as violations — honest about what the audit cannot know, and weaker than reserved_files. Leave unset when you are not touching the tree: that is what keeps the verdict hard." },
       timeout_s: { type: "number", description: `Seconds before the executor is killed. Default ${b.defaultTimeoutS}.` },
     },
     required: ["task", "owned_files", "cwd"],
@@ -448,7 +483,7 @@ function makeTools(b) {
     { name: `${b.name}_status`, description: "Peek at delegated jobs without waiting — state, elapsed seconds and declared ownership. Omit job_id to list them all. Never blocks.", inputSchema: { type: "object", properties: { job_id: { type: "string" } } } },
     { name: `${b.name}_result`, description: "Read a finished job's report again without waiting. Says so if the job is still running.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
     { name: `${b.name}_cancel`, description: "Kill a running job. 🔴 Whatever the executor already wrote STAYS in the working tree, half-done — cancelling is not undoing. Read the diff afterwards.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
-    { name: `${b.name}_ask`, description: `Ask the ${b.name} executor a READ-ONLY question about a codebase — analysis, a broad search, a summary, a second opinion. It writes nothing, and a git audit confirms that. Good for offloading wide reading you would otherwise spend your own context on. Its answer is INPUT, not a verdict: verify anything you are going to act on.`, inputSchema: { type: "object", properties: { question: { type: "string", description: "The question. Ask for file:line citations so you can verify the answer." }, cwd: { type: "string" }, context_files: { type: "array", items: { type: "string" } }, ...b.extraTaskProps, timeout_s: { type: "number" } }, required: ["question", "cwd"] } },
+    { name: `${b.name}_ask`, description: `Ask the ${b.name} executor a READ-ONLY question about a codebase — analysis, a broad search, a summary, a second opinion. It writes nothing, and a git audit confirms that. Good for offloading wide reading you would otherwise spend your own context on. Its answer is INPUT, not a verdict: verify anything you are going to act on.`, inputSchema: { type: "object", properties: { question: { type: "string", description: "The question. Ask for file:line citations so you can verify the answer." }, cwd: { type: "string" }, context_files: { type: "array", items: { type: "string" } }, ...b.extraTaskProps, reserved_files: { type: "array", items: { type: "string" }, description: "Paths you will be editing yourself while this read-only call runs." }, orchestrator_writing: { type: "boolean", description: "True if you will keep working in the tree; changes then come back as unattributed rather than as a read-only violation." }, timeout_s: { type: "number" } }, required: ["question", "cwd"] } },
     { name: `${b.name}_followup`, description: `Continue a previous ${b.name} conversation by its ${b.resumeIdLabel} — to correct course, ask for a fix, or answer a question the executor was blocked on. Cheaper and more accurate than restating the whole task, because the executor keeps its context. Same rules and the same git audit apply.`, inputSchema: { type: "object", properties: { [b.resumeIdLabel]: { type: "string" }, message: { type: "string" }, cwd: { type: "string" }, owned_files: { type: "array", items: { type: "string" }, description: "Re-state the owned files if this follow-up writes. Omit for a read-only follow-up." }, timeout_s: { type: "number" } }, required: [b.resumeIdLabel, "message", "cwd"] } },
   ];
   if (b.modelsArgs) {
@@ -473,11 +508,18 @@ function makeImpl(b) {
     // fast executor lands its change before the snapshot and the audit never sees it.
     const before = await job.epoch.baselineP;
     const ignoredBefore = await ignoredSnapshot(cwd, owned);
-    return { cwd, job, before, ignoredBefore };
+    const orchestrator = {
+      reserved: Array.isArray(a.reserved_files) ? a.reserved_files : [],
+      // 🔴 Deliberately NOT implied by reserved_files. Declaring one path means "this one is
+      // mine"; it must not quietly downgrade the verdict on everything else, which is the
+      // opposite of why someone reaches for precision in the first place.
+      orchestratorWriting: a.orchestrator_writing === true,
+    };
+    return { cwd, job, before, ignoredBefore, orchestrator };
   }
 
   async function finish(prep, owned, after) {
-    const audit = auditSnapshots(prep.before, after, owned, othersOwned(prep.job.epoch, prep.job.id));
+    const audit = auditSnapshots(prep.before, after, owned, othersOwned(prep.job.epoch, prep.job.id), prep.orchestrator);
     // Owned paths that git ignores are invisible to the snapshot above, so they get
     // their own pathspec-limited comparison. Without this, writing a report into an
     // ignored directory reads as "reported success but changed nothing".
@@ -512,7 +554,7 @@ function makeImpl(b) {
     const audit = await finish(prep, a.owned_files, after);
 
     if (!r.ok && r.error) {
-      return { isError: true, text: report(b, { header: `${b.name}_task FAILED: ${r.error}`, violations: audit.violations, touched: audit.touched, declared: a.owned_files, execText: r.text || "", usage: "", resumeId: null, auditNote: audit.note }) };
+      return { isError: true, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_task FAILED: ${r.error}`, violations: audit.violations, touched: audit.touched, declared: a.owned_files, execText: r.text || "", usage: "", resumeId: null, auditNote: audit.note }) };
     }
     const violations = [...audit.violations];
     if (r.status === "CANCELED") {
@@ -523,7 +565,7 @@ function makeImpl(b) {
     }
     return {
       isError: violations.length > 0,
-      text: report(b, { header: `${b.name}_task ${r.status || (r.ok ? "SUCCESS" : "UNKNOWN")}`, violations, touched: audit.touched, declared: a.owned_files, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }),
+      text: report(b, { unattributed: audit.unattributed, header: `${b.name}_task ${r.status || (r.ok ? "SUCCESS" : "UNKNOWN")}`, violations, touched: audit.touched, declared: a.owned_files, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }),
     };
   }
 
@@ -611,10 +653,14 @@ function makeImpl(b) {
       const after = await gitSnapshot(prep.cwd);
       const audit = await finish(prep, [], after);
       const violations = [...audit.violations];
-      // In read-only mode ANY write is a violation.
-      for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a ${b.name}_ask call.`);
+      // In read-only mode ANY write is a violation — unless the orchestrator said it was
+      // writing too, in which case the change is already reported as unattributed and
+      // calling it a violation would be asserting something the audit cannot know.
+      if (!prep.orchestrator.orchestratorWriting) {
+        for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a ${b.name}_ask call.`);
+      }
       if (!r.ok && r.error) return { isError: true, text: `${b.name}_ask FAILED: ${r.error}` };
-      return { isError: violations.length > 0, text: report(b, { header: `${b.name}_ask ${r.status || "SUCCESS"} · read-only`, violations, touched: audit.touched, declared: null, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
+      return { isError: violations.length > 0, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_ask ${r.status || "SUCCESS"} · read-only`, violations, touched: audit.touched, declared: null, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
       });
     },
 
@@ -635,7 +681,7 @@ function makeImpl(b) {
       const violations = [...audit.violations];
       if (!owned.length) for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a read-only follow-up.`);
       if (!r.ok && r.error) return { isError: true, text: `${b.name}_followup FAILED: ${r.error}` };
-      return { isError: violations.length > 0, text: report(b, { header: `${b.name}_followup ${r.status || "SUCCESS"}`, violations, touched: audit.touched, declared: owned, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
+      return { isError: violations.length > 0, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_followup ${r.status || "SUCCESS"}`, violations, touched: audit.touched, declared: owned, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
       });
     },
 
