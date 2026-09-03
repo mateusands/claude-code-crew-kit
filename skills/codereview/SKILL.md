@@ -125,7 +125,8 @@ what the diff touches**, and say at the end which gates you applied.
 | schema / migration | **Schema and migration** (and the `schema` skill) |
 | a data source with `??` · `COALESCE` · flag · legacy path | **Dead code and stale fallback** |
 | `{{SENSITIVE_DATA}}`, `{{RED_ZONE}}`, external service | the **`compliance`** gate (do not repeat its text here) |
-| the dependency manifest | the **license** gate |
+| the dependency manifest or a lockfile | the **license** gate (`compliance`) for anything new, and the **`dependencies`** skill for what is already there |
+| a changed line with a comment above it | the **`comments`** skill — a comment the diff made false is a lie the next reader acts on, and the author is the least likely to see it |
 | infra: `Dockerfile`, `compose`, CI, `deploy/` | **Infrastructure secrets and defaults** |
 | a function > ~30 lines, or a block repeated in 3+ places | **Simplification** |
 | `{{CRITICAL_ASSET}}` | the project's integrity checklist — the highest-risk trigger |
