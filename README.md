@@ -291,7 +291,8 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 `.github/pull_request_template.md`, which is where GitHub reads it from — a convention kept in
 `.claude/` reaches the agents and never reaches the team.
 
-Four rules do the work. **No internal-tool attribution** — not "the reviewer agent found", not "the
+Five rules do the work. **Write it in the repository's language** — one PR in another language is
+a seam in the history. **No internal-tool attribution** — not "the reviewer agent found", not "the
 second opinion said": the PR is read as one developer's work, and authority comes from the proof, not
 from who produced the finding. **Result, not intention** — "ran the suite" is worth nothing, "30
 tests, 30 pass" is. **Declare what was not covered**, because a PR listing only what passed is read
