@@ -193,9 +193,9 @@ backgrounding a call that is waiting. That call is `*_await`.
                  and notifies you the moment it settles
 ```
 
-Reported from the field: *"o `codex_start` devolve o handle, mas o término não me avisa — eu preciso
-perguntar com `codex_status`."* That is what happens when `await` looks like blocking, so nobody calls
-it. At the **2-minute** default backgrounding threshold, awaiting right after starting really does
+Reported from the field: *`codex_start` hands back the handle, but nothing tells you it finished — you
+have to go and ask with `codex_status`.* That is what happens when `await` looks like blocking, so
+nobody calls it. At the **2-minute** default backgrounding threshold, awaiting right after starting really does
 cost two minutes of a stalled turn — which is why `settings.json` now ships
 `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000`. With it, `await` frees the turn in seconds **and** still
 delivers the result as a notification.
