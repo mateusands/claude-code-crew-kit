@@ -10,7 +10,7 @@
  *
  * Everything general lives in ../lib/core.mjs. Here is only what makes Codex Codex.
  *
- * 🔴 Codex differs from the other executors in one important way: it CAN run shell
+ * Codex differs from the other executors in one important way: it CAN run shell
  * commands, inside its own OS sandbox. That is a strength — it can check its own work
  * — and a risk, so containment is the sandbox flag, measured rather than assumed.
  */
@@ -43,7 +43,7 @@ serve({
     if (resumeId) args.push("resume", resumeId);
     if (model) args.push("--model", model);
     if (effort) args.push("-c", `model_reasoning_effort="${effort}"`);
-    // 🔴 Containment, measured on codex-cli 0.152.0 rather than taken from the docs:
+ // Containment, measured on codex-cli 0.152.0 rather than taken from the docs:
     // `workspace-write` mounts .git READ-ONLY, so `git add` fails on .git/index.lock and
     // a commit cannot happen — and Codex reports the failure honestly instead of
     // inventing a hash. `read-only` blocks every write. Never use

@@ -26,7 +26,10 @@ Read, in this order:
    loose ends nobody else remembers live. If the task touches an area you do not know, `grep` the older
    ones too: that folder is the accumulated memory.
 6. **Today's plans**, if any: `{{RECORDS_DIR}}/plans-local/<today>/`.
-7. **The real git state** (read-only):
+7. **The dependency surface** — run the **`dependencies`** skill. It is the one gate triggered by
+   time rather than by a diff: an advisory that landed last week appears in no `git diff`, and the
+   cost of finding out is one command.
+8. **The real git state** (read-only):
    ```bash
    git status --short && git branch --show-current && git log --oneline -10
    ```

@@ -77,10 +77,10 @@ update" changes an outcome.
 ├── agents/                     # 5 subagents
 ├── commands/                   # 4 commands that stitch the skills together
 ├── workflows/                  # role policy + multi-agent orchestration
-└── skills/                     # 16 skills
+└── skills/                     # 18 skills
 ```
 
-### The 16 skills
+### The 18 skills
 
 | Skill | Role |
 |---|---|
@@ -97,6 +97,8 @@ update" changes an outcome.
 | `frontend` | UI conventions: design system, data, states, theming |
 | `schema` | database changes without breaking the deploy |
 | `compliance` | gate for personal data, licenses and confidentiality |
+| `dependencies` | what is vulnerable and what is behind — the one gate that fires on time, not on a diff |
+| `comments` | which comments earn their place in the code, and which to delete |
 | `audit-trail` | no action without a trace |
 | `end-session` | permanent hardening report + update the source of truth |
 | `onboard-agent` | add a new CLI agent to the crew, after it passes the containment battery |

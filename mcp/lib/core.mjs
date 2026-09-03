@@ -61,7 +61,7 @@ async function isGitRepo(cwd) {
 
 /* ─────────────────────────── git audit ─────────────────────────── */
 
-/** 🔴 A status CODE is not a fingerprint. A file already at `" M"` before the executor
+/** A status CODE is not a fingerprint. A file already at `" M"` before the executor
  *  runs is still `" M"` after it rewrites the whole thing, and a file already at `"??"`
  *  stays `"??"` — so comparing codes alone lets an unauthorised overwrite of anything
  *  the human was already editing pass completely unseen. Every path git reports is
@@ -142,7 +142,7 @@ const pathsOverlap = (x, y) => isOwned(x, [y]) || isOwned(y, [x]);
  * @param reserved  paths the ORCHESTRATOR declared it would touch itself
  * @param orchestratorWriting  the orchestrator said it is working in the tree in parallel
  *
- * 🔴 git records that a file changed, never who changed it. Delegation exists so the
+ * git records that a file changed, never who changed it. Delegation exists so the
  * orchestrator can keep working, and when it does, its own edits look exactly like an
  * executor stepping out of scope. Reporting those as charter violations is a claim the
  * audit cannot support, and one wrong finding burns trust in every other one.
@@ -251,7 +251,7 @@ function registryDir(cwd) {
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
 const entryFile = (dir, key) => join(dir, key.replace(/[^A-Za-z0-9_-]/g, "-") + ".json");
 
-/** 🔴 One file per job, never one shared file. A shared registry needs read-modify-write,
+/** One file per job, never one shared file. A shared registry needs read-modify-write,
  *  and two servers starting at the same instant both read it empty and the second write
  *  erases the first — measured, as one executor accusing the other again. A job only ever
  *  writes its OWN file, so there is no update to lose. */
@@ -288,7 +288,7 @@ function publishOwnership(cwd, key, owned) {
   if (dir) writeEntry(dir, key, { key, pid: process.pid, owned, startedAt: Date.now() });
 }
 
-/** 🔴 Marks the job finished; it does NOT drop the claim. A job that ends first has
+/** Marks the job finished; it does NOT drop the claim. A job that ends first has
  *  still left its writes in the tree, and a job that started before it audits AFTER
  *  it — dropping the claim on completion is how the earlier job ends up accused of
  *  the later one's work. Same reason `epoch.owners` keeps finished jobs in-process. */
@@ -315,7 +315,7 @@ function ownedElsewhere(cwd, key, sinceMs) {
   return out;
 }
 
-/** 🔴 Synchronous up to and including registration. An earlier version awaited the
+/** Synchronous up to and including registration. An earlier version awaited the
  *  baseline before adding the job to `active`, and a second call arriving during that
  *  await saw an empty registry and opened a competing epoch — so each job audited
  *  against its own baseline and the false accusations came back. Check-then-act must
@@ -361,7 +361,7 @@ export function othersOwned(epoch, id) {
   return out;
 }
 
-/** 🔴 Must run on EVERY exit path, including a throw. When this was reachable only
+/** Must run on EVERY exit path, including a throw. When this was reachable only
  *  through the success path, an exception after registration left the id in `active`
  *  forever — and every later job claiming that path failed with an ownership conflict
  *  for the life of the process. Callers wrap the work in try/finally. */
@@ -609,7 +609,7 @@ function makeImpl(b) {
     const ignoredBefore = await ignoredSnapshot(cwd, owned);
     const orchestrator = {
       reserved: Array.isArray(a.reserved_files) ? a.reserved_files : [],
-      // 🔴 Deliberately NOT implied by reserved_files. Declaring one path means "this one is
+ // Deliberately NOT implied by reserved_files. Declaring one path means "this one is
       // mine"; it must not quietly downgrade the verdict on everything else, which is the
       // opposite of why someone reaches for precision in the first place.
       orchestratorWriting: a.orchestrator_writing === true,
@@ -641,7 +641,7 @@ function makeImpl(b) {
     return audit;
   }
 
-  /** 🔴 The epoch slot is released here and only here, so a throw cannot strand it. */
+ /** The epoch slot is released here and only here, so a throw cannot strand it. */
   async function guarded(prep, fn) {
     try { return await fn(); }
     finally { endJob(prep.job.epoch, prep.job.id, prep.job.cwd, prep.job.key); }

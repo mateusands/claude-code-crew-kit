@@ -6,7 +6,7 @@
  * and the MCP transport — lives in ../lib/core.mjs. What is here is only what makes
  * Copilot Copilot, and the two findings that shaped it.
  *
- * 🔴 This is the least trusted executor in the crew. Both reasons were measured on
+ * This is the least trusted executor in the crew. Both reasons were measured on
  * this machine, not assumed — see README.md:
  *
  *   1. Its `--deny-tool` patterns did NOT stop a commit. Three different spellings
@@ -43,7 +43,7 @@ serve({
 
   buildArgs({ prompt, cwd, model, effort, resumeId }) {
     const args = ["-p", prompt, "-s", "--no-ask-user", "--allow-all-tools"];
-    // 🔴 The one guarantee that actually holds. Never remove this, and never replace it
+ // The one guarantee that actually holds. Never remove this, and never replace it
     // with --deny-tool patterns: those were measured and did not stop a commit.
     args.push("--excluded-tools", "bash");
     args.push("-C", cwd);

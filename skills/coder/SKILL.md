@@ -94,6 +94,11 @@ convention" something that is being decided right now.
 
 Applying them now costs nothing; applying them later is rework.
 
+- **Comments are written here, not in review** — follow the **`comments`** skill. The short version: a
+  comment must say something the code does not, at a different level than the code; one that repeats
+  its line gets deleted, not improved. And if this change made a nearby comment false, fixing it
+  belongs in **this** diff — a stale comment is worse than none, because it is trusted.
+
 - **Validate before persisting**, always, with an allowlist — covering **both create and update**.
 - **Application errors through one path only** (application error type + central handler). Never
   return a raw error to the client: it leaks SQL, SDK messages and internal paths, **and it bypasses
@@ -174,6 +179,8 @@ bad — flags your good call as a defect, or waves a real one through.
 - [ ] **Schema applied** before exercising?
 - [ ] **Gates** run where applicable
 - [ ] **Runtime**: I actually exercised it — not just "looks right reading the diff"
+- [ ] **Comments**: nothing I added repeats its line, and nothing I left behind became false
+      because of this change
 - [ ] **Deviations**: every departure from the approved plan has a row (§ 4), and every decision worth
       remembering was written when I made it — not left for `end-session` to reconstruct
 
