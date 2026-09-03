@@ -1,10 +1,12 @@
 # shadcn — component registry access
 
 ```jsonc
-{ "mcpServers": { "shadcn": { "command": "npx", "args": ["shadcn@latest", "mcp"] } } }
+{ "mcpServers": { "shadcn": { "command": "npx", "args": ["shadcn@4.20.1", "mcp"] } } }
 ```
 
-Or let it configure itself: `pnpm dlx shadcn@latest mcp init --client claude`
+Or let it configure itself: `pnpm dlx shadcn@latest mcp init --client claude` — `latest` is right for
+that one, because it runs once, by hand, and you want the newest setup logic. The server invocation
+above is pinned for the opposite reason: it runs at every session start.
 (also supports `cursor`, `vscode`, `codex`).
 
 It exposes: browse a registry, search components by name or function, and install one from a natural

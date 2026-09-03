@@ -1,10 +1,15 @@
 # Playwright — the browser the review skills assume
 
 ```jsonc
-{ "mcpServers": { "playwright": { "command": "npx", "args": ["-y", "@playwright/mcp@latest"] } } }
+{ "mcpServers": { "playwright": { "command": "npx", "args": ["-y", "@playwright/mcp@0.0.80"] } } }
 ```
 
 Nothing else to install; `npx` fetches it. The first run downloads a browser.
+
+The version is pinned, and this package is the strongest case for it in the kit: `latest` sits on the
+**0.0.x** line, where semver promises nothing between releases, across 433 published versions. `npx`
+resolves at every session start, so `@latest` means whatever shipped upstream this afternoon drives
+your browser tonight. Raise the pin deliberately, after reading what changed.
 
 ## Why this one is the default
 
