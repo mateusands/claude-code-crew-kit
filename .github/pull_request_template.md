@@ -1,74 +1,76 @@
-## Contexto
+## Context
 
-O problema em uma frase: quem sofre, o que vê hoje, o que deveria ver.
-Se for bug, como reproduzir. Se for melhoria, o que motivou agora.
+The problem in one sentence: who suffers, what they see today, what they should see.
+If it is a bug, how to reproduce it. If it is an improvement, what made it worth doing now.
 
-## O que muda
+## What changes
 
-A solução e por que esta forma, não outra. Cite `arquivo:linha` no que for central.
+The solution, and why this shape rather than another. Cite `file:line` for anything central.
 
-## O que NÃO muda
+## What does NOT change
 
-Fronteira explícita. Sem isto, um PR de correção é lido como refactor.
+The boundary, stated. Without it a fix reads as a refactor.
 
-## Como validar
+## How to validate
 
-| Nível | O que cobre | Resultado |
+| Level | What it covers | Result |
 |---|---|---|
-| N1 | `npm test` + `node --check` em cada `server.mjs` e no `core.mjs` | |
-| N2 | Os servidores respondem `initialize` e `tools/list` por stdio | |
-| N3 | Ponta a ponta contra o CLI executor real, em repositório descartável | |
+| N1 | `npm test` + `node --check` on each `server.mjs` and on `core.mjs` | |
+| N2 | The servers answer `initialize` and `tools/list` over stdio | |
+| N3 | End to end against the real executor CLI, in a throwaway repository | |
 
-**Não coberto:** o que ficou de fora e por quê.
+**Not covered:** what was left out, and why.
 
-## Mudança de comportamento
+## Behaviour change
 
-Sim/Não. Se sim: o que o orquestrador ou o executor passa a ver de diferente.
+Yes/No. If yes: what the orchestrator or the executor now sees differently.
 
-## Risco e rollback
+## Risk and rollback
 
-O pior caminho é o que PARECE sucesso: auditoria que deixa passar escrita fora de escopo, job que
-reporta DONE sem ter escrito nada, veredito verde numa árvore que ninguém olhou. Aponte o SHA de
-partida para `git revert`.
+The worst path is the one that LOOKS like success: an audit that lets an out-of-scope write through, a
+job reporting DONE having written nothing, a green verdict on a tree nobody opened. Name the SHA to
+`git revert` to.
 
-## Ordem de merge
+## Merge order
 
-Se empilha em outro PR, diga qual e por que a ordem importa.
+If it stacks on another PR, say which and why the order matters.
 
 <!--
 ═══════════════════════════════════════════════════════════════════════════════
-REGRAS DE ESCRITA — apague este bloco antes de abrir o PR
+WRITING RULES — delete this block before opening the PR
 
-Sem atribuição a ferramenta interna. Nada de "o Codex apontou", "revisão adversarial",
-"o Gemini sugeriu". O achado entra pelo que é e por como foi provado — a prova é o que dá
-autoridade, não quem a produziu.
+Write the PR in English. Every commit, release and document in this repository is in English;
+one PR in another language is a seam in the history.
 
-Poucos emotes. No máximo onde marcam severidade real numa tabela. Corpo de PR não é chat.
+No internal-tool attribution. Not "the reviewer agent found", not "the second opinion said".
+The PR is read as one developer's work: a finding enters by what it is and how it was proven,
+and the proof is what carries authority, not who produced it.
 
-Resultado, não intenção. "Rodei o N1" não vale nada; "N1: 30 testes, 30 passam" vale.
-Cole o número.
+Few emotes. At most where they mark real severity inside a table. A PR body is not a chat.
 
-Declare o que NÃO foi coberto. Um PR que lista só o que passou é lido como cobertura total.
-O limite escrito vale mais que o limite escondido.
+Result, not intention. "Ran N1" is worth nothing; "N1: 30 tests, 30 pass" is. Paste the number.
 
-Título: `tipo(escopo): descrição objetiva`, e `[n/N]` quando a PR faz parte de uma fila.
+Declare what was NOT covered. A PR listing only what passed is read as full coverage.
+A written limit is worth more than a hidden one.
+
+Title: `type(scope): objective description`, and `[n/N]` when the PR is one of a queue.
 
 ───────────────────────────────────────────────────────────────────────────────
-ARMADILHAS QUE JÁ CUSTARAM UMA RODADA NESTE REPOSITÓRIO
+TRAPS THAT HAVE ALREADY COST A ROUND IN THIS REPOSITORY
 
-Suíte verde não prova runtime. Vinte e um testes passavam e a auditoria tinha quatro furos —
-todos porque cada teste partia de árvore LIMPA, que não é como um repositório em uso se parece.
-Quando escrever teste de auditoria, comece sujo.
+A green suite does not prove runtime. Twenty-one tests passed while the audit had four holes —
+all of them because every test started from a CLEAN tree, which is not what a repository in use
+looks like. When you write an audit test, start dirty.
 
-O comando documentado precisa funcionar na versão dos outros. `node --test tests/` funciona no
-Node 26 e falha no 22 com `Cannot find module`. Era o primeiro comando do README, e uma suíte
-verde parecia kit quebrado. Rode `npm test`, que nomeia os arquivos.
+The documented command has to work on other people's version. `node --test tests/` works on
+Node 26 and fails on 22 with `Cannot find module`. It was the first command in the README, and
+a green suite looked like a broken kit. Run `npm test`, which names the files.
 
-O git registra QUE um arquivo mudou, nunca QUEM mudou. Escrita do orquestrador em paralelo é
-indistinguível de executor saindo do escopo. Se você mexeu na árvore durante o job, declare
-(`reserved_files` ou `orchestrator_writing`) antes de tratar a violação como real.
+git records THAT a file changed, never WHO changed it. Your own concurrent writes are
+indistinguishable from an executor going out of scope. If you touched the tree while a job ran,
+declare it (`reserved_files` or `orchestrator_writing`) before treating a violation as real.
 
-Servidor MCP não acorda o cliente. O sinal de término vem do host mandando o `*_await` para
-background — `*_status` em laço não substitui, só gasta turno.
+An MCP server cannot wake its client. The completion signal comes from the host backgrounding
+`*_await` — polling `*_status` in a loop does not substitute for it, it just burns turns.
 ═══════════════════════════════════════════════════════════════════════════════
 -->
