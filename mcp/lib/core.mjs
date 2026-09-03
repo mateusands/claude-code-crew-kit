@@ -17,9 +17,9 @@
  * No dependencies — MCP stdio transport is newline-delimited JSON-RPC 2.0.
  */
 
-import { spawn } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { spawn, spawnSync } from "node:child_process";
+import { existsSync, statSync, readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
+import { resolve, join } from "node:path";
 
 const PROTOCOL_FALLBACK = "2024-11-05";
 
@@ -221,6 +221,100 @@ export function auditSnapshots(before, after, owned, ownedByOthers = [], { reser
 const EPOCHS = new Map();
 let JOB_SEQ = 0;
 
+/* ── cross-process ownership ──────────────────────────────────────────────
+ * Each executor is its own MCP server, so `EPOCHS` above only ever sees the jobs
+ * of ONE process. Dispatch agy and codex at the same repository and each audits
+ * the other's legitimate writes as out-of-scope — measured, both accusing the
+ * other's file. Declaring `reserved_files` is not the answer either: that asks the
+ * orchestrator to keep two servers' file lists in sync by hand.
+ *
+ * So live ownership is published to a file every server on this repository reads.
+ * It lives in the git directory: per-repo, never committed, invisible to
+ * `git status`, and gone when the repo is.
+ *
+ * Failure degrades to the old behaviour rather than to silence — an unreadable or
+ * unwritable registry means a job's paths are simply not published, which brings
+ * back a false violation, never a missed one.
+ */
+
+const REGISTRY = "crewwatch-jobs";
+const STALE_MS = 2 * 60 * 60 * 1000;
+
+function registryDir(cwd) {
+  try {
+    const r = spawnSync("git", ["rev-parse", "--absolute-git-dir"], { cwd, encoding: "utf8" });
+    if (r.status !== 0) return null;
+    return join(r.stdout.trim(), REGISTRY);
+  } catch { return null; }
+}
+
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+const entryFile = (dir, key) => join(dir, key.replace(/[^A-Za-z0-9_-]/g, "-") + ".json");
+
+/** 🔴 One file per job, never one shared file. A shared registry needs read-modify-write,
+ *  and two servers starting at the same instant both read it empty and the second write
+ *  erases the first — measured, as one executor accusing the other again. A job only ever
+ *  writes its OWN file, so there is no update to lose. */
+function writeEntry(dir, key, entry) {
+  try {
+    mkdirSync(dir, { recursive: true });
+    const path = entryFile(dir, key);
+    const tmp = `${path}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(entry));
+    renameSync(tmp, path);   // atomic: a reader never sees half a file
+  } catch { /* advisory only — see the note above */ }
+}
+
+function readRegistry(dir) {
+  const now = Date.now();
+  const out = [];
+  let names;
+  try { names = readdirSync(dir); } catch { return out; }
+  for (const n of names) {
+    if (!n.endsWith(".json")) continue;
+    let e;
+    try { e = JSON.parse(readFileSync(join(dir, n), "utf8")); } catch { continue; }
+    const expired = now - e.startedAt >= STALE_MS
+      || (e.endedAt !== undefined ? now - e.endedAt >= STALE_MS : !alive(e.pid));
+    // A crashed server must not keep suppressing violations forever.
+    if (expired) { try { unlinkSync(join(dir, n)); } catch { /* someone else got it */ } continue; }
+    out.push(e);
+  }
+  return out;
+}
+
+function publishOwnership(cwd, key, owned) {
+  const dir = registryDir(cwd);
+  if (dir) writeEntry(dir, key, { key, pid: process.pid, owned, startedAt: Date.now() });
+}
+
+/** 🔴 Marks the job finished; it does NOT drop the claim. A job that ends first has
+ *  still left its writes in the tree, and a job that started before it audits AFTER
+ *  it — dropping the claim on completion is how the earlier job ends up accused of
+ *  the later one's work. Same reason `epoch.owners` keeps finished jobs in-process. */
+function withdrawOwnership(cwd, key) {
+  const dir = registryDir(cwd);
+  if (!dir) return;
+  try {
+    const e = JSON.parse(readFileSync(entryFile(dir, key), "utf8"));
+    writeEntry(dir, key, { ...e, endedAt: Date.now() });
+  } catch { /* nothing published, nothing to close */ }
+}
+
+/** What every other job that overlapped ours has declared — finished ones included,
+ *  across every server on this repository. */
+function ownedElsewhere(cwd, key, sinceMs) {
+  const dir = registryDir(cwd);
+  if (!dir) return [];
+  const out = [];
+  for (const e of readRegistry(dir)) {
+    if (e.key === key) continue;
+    // Still running, or it ended after we began — either way its writes are in our window.
+    if (e.endedAt === undefined || e.endedAt >= sinceMs) out.push(...e.owned);
+  }
+  return out;
+}
+
 /** 🔴 Synchronous up to and including registration. An earlier version awaited the
  *  baseline before adding the job to `active`, and a second call arriving during that
  *  await saw an empty registry and opened a competing epoch — so each job audited
@@ -254,7 +348,11 @@ export function beginJob(cwd, owned) {
   const id = ++JOB_SEQ;
   epoch.active.add(id);
   epoch.owners.set(id, owned);
-  return { id, epoch };
+  // Published for the other servers on this repository, not just this process.
+  const key = `${process.pid}:${id}`;
+  const startedAt = Date.now();
+  publishOwnership(cwd, key, owned);
+  return { id, epoch, key, cwd, startedAt };
 }
 
 export function othersOwned(epoch, id) {
@@ -267,7 +365,8 @@ export function othersOwned(epoch, id) {
  *  through the success path, an exception after registration left the id in `active`
  *  forever — and every later job claiming that path failed with an ownership conflict
  *  for the life of the process. Callers wrap the work in try/finally. */
-export function endJob(epoch, id) {
+export function endJob(epoch, id, cwd, key) {
+  if (cwd && key) withdrawOwnership(cwd, key);
   epoch.active.delete(id);
   // The epoch is over. Dropping it keeps EPOCHS from growing one entry per workspace
   // for the life of the server; the next job opens a fresh one with a fresh baseline.
@@ -519,7 +618,11 @@ function makeImpl(b) {
   }
 
   async function finish(prep, owned, after) {
-    const audit = auditSnapshots(prep.before, after, owned, othersOwned(prep.job.epoch, prep.job.id), prep.orchestrator);
+    const audit = auditSnapshots(
+      prep.before, after, owned,
+      [...othersOwned(prep.job.epoch, prep.job.id), ...ownedElsewhere(prep.cwd, prep.job.key, prep.job.startedAt)],
+      prep.orchestrator,
+    );
     // Owned paths that git ignores are invisible to the snapshot above, so they get
     // their own pathspec-limited comparison. Without this, writing a report into an
     // ignored directory reads as "reported success but changed nothing".
@@ -541,7 +644,7 @@ function makeImpl(b) {
   /** 🔴 The epoch slot is released here and only here, so a throw cannot strand it. */
   async function guarded(prep, fn) {
     try { return await fn(); }
-    finally { endJob(prep.job.epoch, prep.job.id); }
+    finally { endJob(prep.job.epoch, prep.job.id, prep.job.cwd, prep.job.key); }
   }
 
   async function runTask(a, prep, signal) {
@@ -594,7 +697,7 @@ function makeImpl(b) {
         .catch((e) => { rec.result = { isError: true, text: `${b.name}-mcp internal error: ${e?.stack || e}` }; rec.state = "failed"; })
         .finally(() => {
           rec.finishedAt = Date.now();
-          endJob(prep.job.epoch, prep.job.id);
+          endJob(prep.job.epoch, prep.job.id, prep.job.cwd, prep.job.key);
           reapJobs();
           maybeExit();
         });

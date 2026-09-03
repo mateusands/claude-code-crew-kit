@@ -27,10 +27,14 @@ git clone https://github.com/mateusands/claude-code-crew-kit.git
 ./claude-code-crew-kit/install.sh /path/to/repo
 ```
 
-It fills `.claude/` with the skills, subagents, commands, workflows and default permissions, puts
-`AGENTS.md`, `CLAUDE.md`, `START.md` and `mcp/` at the project root — never overwriting a file that
-is already there — and writes **`.claude/crewwatch-version`**: the source, the tag, the commit and
-the date.
+It fills `.claude/` with the skills, subagents, commands, workflows, MCP servers and default
+permissions, puts `AGENTS.md`, `CLAUDE.md` and `START.md` at the project root — never overwriting a
+file that is already there — and writes **`.claude/crewwatch-version`**: the source, the tag, the
+commit and the date.
+
+The servers land at **`.claude/mcp/`**, which is what every `.mcp.json` example in this kit points
+at. Only `.mcp.json` itself belongs at the project root, because that is where Claude Code reads it
+from.
 
 That stamp exists because the kit is meant to be **specialized in place** (`START.md` Step 4). Once
 you have rewritten the skills for your project, it is the only record of what you started from. For
@@ -170,6 +174,20 @@ start-session ──► plan ──► plan-review ──► [owner's OK] ──
 
 The rule that cuts across all of them: **`plan` and `codereview` do not write product code**; `coder`
 does; none of them commits or pushes without an explicit order.
+
+### Declaring who owns what
+
+Three inputs on every delegated call decide what the git audit will say, and getting them wrong is
+the most common way to receive a violation that is not one:
+
+| | |
+|---|---|
+| `owned_files` | **required** — the only paths the executor may write. Everything else is read-only and enforced by audit |
+| `reserved_files` | paths **you** will edit while it runs. Without them your own concurrent work reads as the executor going out of scope |
+| `orchestrator_writing` | for when you cannot name them in advance: unowned changes come back as *unattributed* rather than as violations |
+
+You do **not** need to declare another executor's files. Two servers dispatched at one repository
+publish their live ownership to a shared per-repo registry and stop accusing each other.
 
 ### Name the skill when you ask for the work
 

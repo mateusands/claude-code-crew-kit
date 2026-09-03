@@ -109,6 +109,34 @@ precisely because two other agents bracket it: a plan written and reviewed by th
 in, and a `codereview` by a complex-tier agent comes out, judged against the git audit rather than
 against the executor's report. Without both, a medium slice is not delegated, it is abandoned.
 
+## What delegation is actually good at
+
+Measured over a day of production use, and it is not what the routing table above would lead you to
+expect.
+
+**Delegated review paid for itself many times over.** One `codex_start` carrying a review task
+returned **10 findings, all of which held up** on verification. Three were serious and had survived a
+careful pass by the person who wrote the code — a deduplication collapsing under a backend throttle, a
+hole in their own test mock, and a missing provenance guard that was ending live sessions.
+
+**Delegated implementation paid much less.** Of four production bugs that day, three came from
+first-party implementation — and the delegated review is what exposed them. Their conclusion, which
+is worth adopting: **use the crew to review and to measure, and write the code yourself.**
+
+Two structural reasons, not model quality:
+
+- 🔴 **An executor without a shell cannot show you Red.** `agy` and `copilot` have their shell
+  removed, so they cannot run a test before or after writing. They deliver code *asserting* it
+  passes. That is not TDD with a step missing; it is the discipline inverted — the failing test has
+  to exist and be seen by you first, or the delegated diff is a claim.
+- **Ownership has no escape hatch for a break next door.** A job whose fix breaks a test in a file it
+  does not own is correct to stop — the charter says so — but the model offers it nothing else. That
+  is the orchestrator's cue: widen the ownership and continue with `*_followup`, or take the slice
+  back. It is not the executor failing.
+
+`codex` is the exception on the first point: it runs commands inside its sandbox, so it can check its
+own work. It is also the one that produced the review above.
+
 ## 🪤 Two traps paid for in the field
 
 **An unbounded review does not terminate.** Measured on a real project running this kit: two attempts
@@ -126,6 +154,12 @@ paths you are touching, or `orchestrator_writing: true` when you cannot name the
 Declaring one path is precise and leaves the verdict hard everywhere else; the flag is blunt and
 turns unowned changes into a stated ambiguity. Declare nothing and the verdict stays hard, which is
 right — by default the orchestrator is not writing.
+
+**Two executors at once no longer need to know about each other.** Live ownership is published to a
+per-repository registry under the git directory, so `agy` and `codex` dispatched at the same repo stop
+auditing each other's declared files. Before that, each accused the other and the only workaround was
+to hand-mirror both file lists into `reserved_files` — which is exactly the bookkeeping the audit
+exists to remove.
 
 Exercised against the real executor, not only in the suite: one delegated file, three files written
 by the orchestrator while it ran. Undeclared → three violations and the executor's own file correctly
@@ -165,6 +199,9 @@ it. At the **2-minute** default backgrounding threshold, awaiting right after st
 cost two minutes of a stalled turn — which is why `settings.json` now ships
 `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000`. With it, `await` frees the turn in seconds **and** still
 delivers the result as a notification.
+
+**`*_ask` cannot read outside the workspace.** The executor is confined to the `cwd` you give it, so a
+diff saved in `/tmp` is unreachable — put anything you want reviewed inside the repository first.
 
 🔴 **Do not poll `*_status` in a loop.** It never blocks, which makes it feel like the safe choice, but
 it answers only when you think to ask — so polling turns "work while it runs" back into "watch it
