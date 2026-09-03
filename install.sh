@@ -2,7 +2,7 @@
 #
 # Installs this kit into a project: .claude/ gets the skills, subagents, commands,
 # workflows and default permissions; the project root gets AGENTS.md, CLAUDE.md,
-# START.md and the mcp/ folder.
+# START.md; .claude/ also receives the mcp/ servers.
 #
 # It also writes .claude/crewwatch-version, recording which version of the kit
 # landed. That matters because the kit is meant to be SPECIALIZED in place
@@ -69,10 +69,16 @@ copy_if_absent "$SOURCE_DIR/AGENTS.md.template" "$TARGET_ROOT/AGENTS.md"
 copy_if_absent "$SOURCE_DIR/CLAUDE.md.template" "$TARGET_ROOT/CLAUDE.md"
 copy_if_absent "$SOURCE_DIR/START.md" "$TARGET_ROOT/START.md"
 
-if [ -e "$TARGET_ROOT/mcp" ]; then
-  echo "  kept existing mcp/ (not overwritten)"
+# 🔴 Under .claude/, not at the project root. Every .mcp.json example this kit ships
+# already says `.claude/mcp/<server>/server.mjs`, and every relative link inside mcp/**
+# points at ../agents, ../skills and ../workflows — which land in .claude/. Installed at
+# the root those six links resolved to directories that do not exist there, and the
+# agy-runner subagent became unreachable: someone ran the kit for a day without knowing
+# it existed. The project root only ever needed .mcp.json itself.
+if [ -e "$DEST/mcp" ]; then
+  echo "  kept existing .claude/mcp/ (not overwritten)"
 else
-  cp -r "$SOURCE_DIR/mcp" "$TARGET_ROOT/mcp"
+  cp -r "$SOURCE_DIR/mcp" "$DEST/mcp"
 fi
 
 VERSION="$(git -C "$SOURCE_DIR" describe --tags --always 2>/dev/null || echo unknown)"
@@ -88,6 +94,9 @@ SOURCE_URL="$(git -C "$SOURCE_DIR" remote get-url origin 2>/dev/null || echo "$S
 } > "$DEST/crewwatch-version"
 
 echo "Installed the kit into $TARGET_ROOT ($VERSION, $COMMIT)."
+echo
+echo "The MCP servers are at .claude/mcp/. Copy the .mcp.json you want to the project root and"
+echo "point it at .claude/mcp/<server>/server.mjs — that is where the servers actually live."
 echo
 echo "Next: SECURITY.md.template is not installed by default — copy it yourself if this repo is public."
 echo "Then, in the project, tell the agent:  \"Read START.md and follow it.\""

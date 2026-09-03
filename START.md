@@ -108,7 +108,7 @@ the relevant ones and teaches the reader to skim.
 Deleting `compliance`, `plan`, `coder`, `codereview`, `local-testing`, `start-session` or
 `end-session` requires the human's explicit say-so. Those are the spine.
 
-Also read [`workflows/agent-roles.md`](workflows/agent-roles.md) and tell the human which agents are
+Also read [`.claude/workflows/agent-roles.md`](.claude/workflows/agent-roles.md) and tell the human which agents are
 actually available here — the review policy assumes two complex agents (Claude and Codex). With only
 one, say so plainly: cross-review is the mechanism, and without a second agent it does not exist.
 
@@ -157,7 +157,7 @@ This is where the project's working memory lives.
     └── YYYY-MM-DD.md
 ```
 
-**Create `info.md` from [`crew-info.md.template`](crew-info.md.template) first**, and 🔴 **ask the
+**Create `info.md` from [`.claude/crew-info.md.template`](.claude/crew-info.md.template) first**, and 🔴 **ask the
 human which mode applies** — `solo`, `duo` or `crew`. Do not infer `crew` from the fact that MCP
 servers exist in the config. A roster naming agents that are not actually reachable is worse than
 `solo`, because the process will then expect reviews that never happen and nobody will notice.
@@ -196,15 +196,15 @@ one machine.
 
 ## Step 6 — install the MCP servers
 
-See [`mcp/README.md`](mcp/README.md). One folder per server; copy the ones the project needs into the
-project root as `.mcp.json`.
+See [`.claude/mcp/README.md`](.claude/mcp/README.md). The servers live at `.claude/mcp/`; only the
+`.mcp.json` you choose goes to the project root, pointing at `.claude/mcp/<server>/server.mjs`.
 
 | Server | Offer it when | Why |
 |---|---|---|
 | **playwright** | the project has any UI | without it, `design-review` and `local-testing` cannot open anything and are reduced to guessing |
 | **agy** | there will be small, repetitive, low-risk work to delegate | it executes bounded tasks under a charter and a git audit |
 | **codex** | you want a second, independent review pass | `codereview` Step −1 asks for one |
-| **copilot** | you want a second executor beside `agy` | prefer `agy` first — see [`mcp/copilot/README.md`](mcp/copilot/README.md) on why it is the least trusted |
+| **copilot** | you want a second executor beside `agy` | prefer `agy` first — see [`.claude/mcp/copilot/README.md`](.claude/mcp/copilot/README.md) on why it is the least trusted |
 | **context7** | the stack pins versions and agents keep guessing library APIs | it answers `backend`/`frontend` Step 0 for the pinned version; the API key goes in the human's user config, never in `.mcp.json` |
 | **shadcn** | 🔴 **only if `components.json` exists** in the project | on any other UI stack it costs context and tempts agents away from the project's own primitives |
 

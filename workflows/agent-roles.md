@@ -88,6 +88,13 @@ So the tier widens on two conditions, and neither is a preference:
 Take either condition away and this stops being a wider tier and becomes an unsupervised one. What
 makes a medium slice safe is not the model's quality; it is that two other agents bracket it.
 
+🔴 **Review is where delegation pays most, and implementation is where it pays least.** Measured in
+production: one delegated review returned ten findings that all held up, three of them serious and
+already missed by a careful first-party pass — while three of that day's four production bugs came
+out of first-party implementation. An executor without a shell cannot show you Red, so a delegated
+implementation arrives as a claim that it passes; a delegated review arrives as findings you can
+check one by one. Weight the crew accordingly.
+
 🔴 **Uncertainty escalates, always.** If the right shape of the change is still open, no amount of
 model quality in the delegated tier fixes it — delegation multiplies whatever the plan already got
 right, and multiplies its errors just as faithfully. Decide first, then delegate.
