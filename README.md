@@ -345,3 +345,12 @@ while review only flags its absence. The ideas are his; the wording here is ours
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
+
+`install.sh` places a copy at **`.claude/LICENSE-crewwatch`** in the project you install into. That is
+deliberate: an install copies the skills, the workflows and the MCP servers into another repository,
+which is a substantial portion of this software, and MIT asks for the notice to travel with it. The
+file covers the kit only — it says nothing about the project that hosts it, which keeps whatever
+licence it already had.
+
+Keep it if you publish a repository containing these files. Nothing here asks for a link back or a
+badge; the notice is the whole obligation.

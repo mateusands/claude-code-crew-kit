@@ -61,3 +61,23 @@ test("the servers land where the shipped .mcp.json examples point", (t) => {
   }
   assert.ok(existsSync(join(target, ".claude/mcp/lib/core.mjs")));
 });
+
+test("the licence travels with the copy it covers", (t) => {
+  // An install copies the skills, the workflows and the servers into someone else's
+  // repository — a substantial portion, which MIT asks the notice to accompany. The
+  // installer shipping everything except the notice put the person who ran it out of
+  // compliance through no fault of their own.
+  const target = mkdtempSync(join(tmpdir(), "crew-install-"));
+  t.after(() => rmSync(target, { recursive: true, force: true }));
+  execFileSync(join(REPO_ROOT, "install.sh"), [target], { stdio: "pipe" });
+
+  const shipped = join(target, ".claude/LICENSE-crewwatch");
+  assert.ok(existsSync(shipped), "the kit's MIT notice did not travel with the install");
+
+  const text = readFileSync(shipped, "utf8");
+  assert.match(text, /MIT License/);
+  assert.match(text, /Copyright \(c\)/);
+  assert.match(text, /github\.com\/mateusands\/claude-code-crew-kit/, "the notice must say what it covers");
+  // The operative terms are the ones that must not drift.
+  assert.equal(text.split("Permission is hereby granted")[1], readFileSync(join(REPO_ROOT, "LICENSE"), "utf8").split("Permission is hereby granted")[1]);
+});
