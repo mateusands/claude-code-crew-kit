@@ -354,3 +354,16 @@ licence it already had.
 
 Keep it if you publish a repository containing these files. Nothing here asks for a link back or a
 badge; the notice is the whole obligation.
+
+⚠️ **If you gitignore parts of `.claude/`, un-ignore the notice.** A project that versions the skills
+but ignores `.claude/*` drops the licence with everything else — and then publishes the copy without
+the file that covers it, which is the exact situation this is meant to avoid:
+
+```gitignore
+.claude/*
+!.claude/skills/
+!.claude/LICENSE-crewwatch      # the notice goes wherever the copied files go
+```
+
+Ignoring `.claude/` **entirely** needs none of this: nothing is being distributed, so nothing needs
+the notice.
