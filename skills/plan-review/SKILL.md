@@ -52,7 +52,7 @@ check.** A plan that says *"this is the only call site"* is making a testable as
 
 ---
 
-## The eight checks
+## The nine checks
 
 Run all eight. Say explicitly which ones found nothing — a review that only lists problems reads as
 if the rest was verified, and it was not.
@@ -124,7 +124,26 @@ For each numbered assumption:
 - Is there a **rollback point**, and does it survive a schema change? If the old code breaks against
   the migrated database, there is no rollback, and the plan should say so.
 
-### 8. Is it routed and sliced correctly?
+### 8. Does the diagnosis hold for every symptom it claims?
+
+The check that the other seven do not make. They ask whether the *solution* is right; this one asks
+whether the **cause** is, and a plan can pass all of them while fixing something that was never the
+problem.
+
+For each symptom the plan promises to resolve, find the measurement that links this cause to *that*
+symptom. Then ask the only question that matters:
+
+> Which of these rows is an **observation**, and which is an **inference from a neighbouring row**?
+
+Two symptoms that look like they share a cause are the trap. One gets measured, the other gets assumed
+because the story is coherent — and a coherent story is exactly what makes the assumption invisible.
+An inference here is a finding, not a nitpick: it means part of what this fix promises rests on
+nothing.
+
+🔴 **If a symptom has no measurement, the plan does not get to promise it.** Either it is measured
+before implementation, or it comes out of the acceptance criteria and is stated as still open.
+
+### 9. Is it routed and sliced correctly?
 
 - Is anything in `{{RED_ZONE}}`, auth, schema or concurrency being sent to the **low-risk tier**?
   That is a routing error and it is a blocker.
@@ -170,6 +189,7 @@ For each numbered assumption:
 | 4 | Twin hunted | … |
 | 5 | Shape of the change | … |
 | 6 | Test plan can fail | … |
+| 8 | Diagnosis holds per symptom | … (measured: <symptom>; inferred: <symptom>) |
 | 7 | Gates and boundary | … |
 | 8 | Routing and slicing | … |
 
