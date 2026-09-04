@@ -186,18 +186,58 @@ happened.
 
 ### How to run the cross review
 
-The reviewer runs the [`codereview`](../skills/codereview/SKILL.md) skill, including its **Step −1**
-(run your own host reviewer too). Concretely:
+🔴 **Do not send an external reviewer to go read a skill.** The example this section used to give did
+exactly that, and it is the anti-pattern: `codereview` is around 390 lines, and a reviewer that spends
+its budget reading a procedure file arrives at the diff with nothing left. Measured in the field —
+three reviews died that way before the pattern below was found by trial.
+
+**Put the domain inline, ask numbered questions, cap the answer, name the verdict format, and forbid
+delegation.**
 
 ```bash
 # Claude wrote it → Codex reviews
-codex exec --sandbox read-only "Review the working tree changes. Follow .claude/skills/codereview/SKILL.md."
+codex exec --sandbox read-only "$(cat <<'PROMPT'
+Review the working tree changes in this repository. Answer ONLY these questions.
+
+CONTEXT (do not go looking for more):
+- What the change is for: <one or two sentences>
+- What must not break: <the invariant, the red zone, the contract>
+- Already known and out of scope: <what not to report>
+
+QUESTIONS:
+1. <a specific, answerable question about a real risk of THIS diff>
+2. <another>
+3. <another>
+
+RULES:
+- Do not delegate this to any other tool or agent. Answer it yourself.
+- Read only the diff and the files it touches.
+- 400 words maximum.
+
+END WITH EXACTLY:
+VERDICT: BLOCK | PROCEED WITH CAVEAT | CLEAR
+FINDINGS: file:line — what is wrong — the concrete failure it causes
+PROMPT
+)"
 
 # Codex wrote it → Claude reviews
 # (run the codereview skill in the Claude session, plus /code-review and /security-review)
 ```
 
+Each rule is there because its absence broke a review:
+
+| Rule | What happens without it |
+|---|---|
+| Domain **inline** | the reviewer reads a 390-line skill and runs out before the diff |
+| **Numbered, concrete** questions | an open scope never terminates — it keeps finding more to look at, because nothing tells it when it is done |
+| **Word cap** | the same, by another route: a budget with no ceiling gets spent |
+| **Verdict format**, stated literally | you cannot tell "reviewed, found nothing" from "did not review" |
+| **No delegation** | one reviewer tried to hand the job to an orchestration tool and returned that tool's documentation |
+
 Keep the sandbox `read-only` for review: a reviewer that can edit stops being a reviewer.
+
+The Claude-side review is the exception to the inline rule — it runs `codereview` in a session that has
+the skill and the repository already loaded, so there is no budget spent fetching either.
 
 ---
 
