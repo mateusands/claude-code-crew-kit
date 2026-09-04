@@ -16,7 +16,7 @@ Wrong context at the start costs the whole session.
 
 Read, in this order:
 
-1. 🔴 **`{{RECORDS_DIR}}/info.md`** — the mode and the roster: who is in the crew, who reviews, who
+1. 🔴 **`{{RECORDS_DIR}}/info.md`** (authority) **and `.crew-kit-config`** (this machine's roster): who reviews, who
    decides each gate. **Read it fresh, never from memory of a previous session**, and state the mode
    in your opening report. In `solo` mode there is no cross-review, and every later report must say so.
 2. **`{{SOURCE_OF_TRUTH}}`** — architecture, conventions, traps already paid for.
@@ -35,6 +35,15 @@ Read, in this order:
    ```
 
 ### If `info.md`, `techstack.md` or `operations.md` do not exist, create them now
+
+🔴 **The roster is not in `info.md`.** Read `.crew-kit-config` at the repository root for which agents
+this machine actually reaches; `info.md` holds only the project's authority. If `.crew-kit-config` is
+missing, copy it from `.crew-kit-config.example`, and until it is filled in **assume `solo`** — an
+assumed reviewer is the one failure the mode declaration exists to prevent.
+
+**The mode you state is the derived one:** the smaller of what `info.md` permits and what the roster
+reaches. Say both in the opening, so a reader can see why: *"project allows crew; this machine has
+claude only; running solo."*
 
 For `info.md`, copy `crew-info.md.template` and **ask the human which mode applies** — do not assume
 `crew` because the MCP servers happen to be configured. A roster listing agents that are not actually

@@ -9,8 +9,19 @@ by the agent that produced it.
 
 ## First — which mode is this project in?
 
-🔴 **Read `{{RECORDS_DIR}}/info.md` before applying anything below.** It declares the mode and the
-roster, and it is the authority; this file is only the default policy.
+🔴 **Read two files before applying anything below**, and read them fresh, not from memory:
+
+- **`{{RECORDS_DIR}}/info.md`** — versioned. What the project permits: authority per gate, red zone,
+  approved vendors.
+- **`.crew-kit-config`** — gitignored. What this machine reaches: the roster, the models, and whether
+  the operator is `{{OWNER}}`.
+
+**The mode is the smaller of the two.** A project that permits `crew` runs `solo` on a machine with
+one agent, and the report says so. A roster listing an agent nobody has seen answer is worse than
+`solo`: the process expects reviews that never happen, and their absence is invisible.
+
+Missing `.crew-kit-config` means `solo` until it is filled in. Never infer a reviewer from an MCP
+entry — a server in a config file is not a signed-in CLI.
 
 | Mode | What applies from this file |
 |---|---|
@@ -179,7 +190,7 @@ the same again.
 
 🔴 **Degrade the step, not the session.** A review that did not complete makes *this step* `solo`, and
 that must be stated in the report: *"cross-review did not complete for this diff; self-review only."*
-The roster in `{{RECORDS_DIR}}/info.md` does not change, and the next step tries the reviewer again.
+The roster in `.crew-kit-config` does not change, and the next step tries the reviewer again.
 Downgrading the whole session because one call failed throws away the gate for work that would have
 gotten it; silently continuing is worse, because the report then implies a second opinion that never
 happened.

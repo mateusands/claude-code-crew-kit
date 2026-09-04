@@ -1,4 +1,4 @@
-# `.crew/info.md` — who is in the crew, and who decides
+# `.crew/info.md` — who decides, and what needs permission
 
 > Copy this to `{{RECORDS_DIR}}/info.md` and fill it in. **Every agent reads this file fresh at the
 > start of a session and again at every gate** — never from memory of an earlier read. It is the one
@@ -10,37 +10,31 @@
 
 ---
 
-## Mode
+## Where the roster lives — and why it is not here
 
-```
-MODE: solo
-```
+🔴 **This file is versioned and shared. It holds the project's AUTHORITY, never one person's setup.**
 
-Pick one. This single line changes what the process expects of you.
+Which agents are reachable, which models are configured and who is sitting at the keyboard all differ
+per machine and change per week. Committing them means two people fighting over one file every
+session — your `crew` is their `solo`, because they never installed codex.
 
-| Mode | Meaning | Use it when |
-|---|---|---|
-| **solo** | One agent does everything: plan, implement, review, validate | you only have one CLI agent, or you want simplicity over cross-checking |
-| **duo** | Two complex agents. They plan/review each other's work. No delegated executors | you have Claude and Codex, but no `agy`/`copilot`, or you do not want delegation |
-| **crew** | Full setup: two complex agents plus low-risk executors | everything is configured and the work has enough volume to delegate |
+That belongs in **`.crew-kit-config`** at the repository root, which is gitignored. Copy
+`.crew-kit-config.example` and fill it in. It declares the roster, the models, and whether you are the
+`{{OWNER}}` named below.
 
-## Roster
+| | |
+|---|---|
+| **This file** — versioned | who decides each gate, the red zone, the critical asset, the approved vendors |
+| **`.crew-kit-config`** — yours | which agents this machine reaches, which models, who you are |
 
-Fill in only what exists. `(none)` is a valid, honest answer.
+**The mode is derived, not chosen twice.** It is the smaller of what this file allows and what your
+roster can reach. A project that permits `crew` still runs `solo` on a machine with one agent — and
+the report must say so.
 
-```
-ORCHESTRATOR:   claude
-SECOND COMPLEX: (none)
-EXECUTORS:      (none)
-BROWSER:        (none)
-```
+> Same principle the kit already uses for `settings.json` versus `settings.local.json`: a rule that
+> applies to everyone is versioned; what is personal is not.
 
-| Slot | What it is | Typical |
-|---|---|---|
-| `ORCHESTRATOR` | talks to the human, plans, splits, owns git | `claude` or `codex` |
-| `SECOND COMPLEX` | reviews the orchestrator's plans and code | the other one |
-| `EXECUTORS` | low-risk delegated work | `agy`, `copilot` |
-| `BROWSER` | the Playwright MCP, for design review and runtime validation | `playwright` |
+---
 
 ---
 
@@ -89,14 +83,7 @@ grows, without touching a skill.
 
 ## Models in use
 
-Record what is actually configured, so a report can say which model produced what.
-
-```
-claude:   claude-opus-5, effort high
-codex:    gpt-5.6-sol, reasoning effort high
-agy:      gemini-3.7-flash-high
-copilot:  (default — best available)
-```
+In `.crew-kit-config`, not here — see above.
 
 ---
 

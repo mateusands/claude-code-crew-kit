@@ -176,7 +176,7 @@ This is where the project's working memory lives.
 
 ```
 .crew/
-├── info.md           # the mode and the roster: who is in the crew, who decides each gate
+├── info.md           # the authority: who decides each gate, red zone, approved vendors (VERSIONED)
 ├── techstack.md      # what the stack IS: versions, commands, structure, dependency rules
 ├── operations.md     # how it RUNS: environments, deploy, branches, ports, seeds, secrets
 ├── plans-local/      # plans, by day. Retention: 7 days. Not versioned
@@ -185,9 +185,21 @@ This is where the project's working memory lives.
     └── YYYY-MM-DD.md
 ```
 
-**Create `info.md` from [`.claude/crew-info.md.template`](.claude/crew-info.md.template) first**, and 🔴 **ask the
-human which mode applies** — `solo`, `duo` or `crew`. Do not infer `crew` from the fact that MCP
-servers exist in the config. A roster naming agents that are not actually reachable is worse than
+**Two files, and the split is the point.**
+
+`.crew/info.md`, from [`.claude/crew-info.md.template`](.claude/crew-info.md.template) — **versioned**.
+It holds the project's authority: who decides each gate, the red zone, the critical asset, the vendors
+already approved. A contributor who clones tomorrow inherits these instead of guessing them.
+
+`.crew-kit-config` at the repository root, from `.crew-kit-config.example` — **gitignored**,
+and `install.sh` already added the entry. It holds what is true of *this machine and this person*:
+which agents are reachable, which models are configured, and whether the operator is the `{{OWNER}}`.
+
+🔴 **Ask the human which mode applies, and check the roster before believing the answer.** Mode is the
+smaller of what the project allows and what this machine reaches — a project that permits `crew` runs
+`solo` on a machine with one agent. Do not infer `crew` from the fact that MCP servers exist in the
+config: a server entry is not a signed-in CLI, and a roster naming an unreachable agent is worse than
+`solo`, because the process then expects reviews that never happen. A roster naming agents that are not actually reachable is worse than
 `solo`, because the process will then expect reviews that never happen and nobody will notice.
 
 **Create `techstack.md` and `operations.md` too**, filled with what you learned in Step 2 — not with
@@ -200,7 +212,8 @@ The division of labor between the three documents, so they do not duplicate each
 |---|---|---|
 | `AGENTS.md` | **the rules** — what to do and not do here, for every agent | rarely |
 | `CLAUDE.md` | imports `AGENTS.md`; holds only Claude-specific notes | rarely |
-| `.crew/info.md` | **the authority** — mode, roster, who decides each gate | when trust or the roster changes |
+| `.crew/info.md` | **the authority** — who decides each gate, red zone, vendors · versioned | when trust changes |
+| `.crew-kit-config` | **the roster** — which agents this machine reaches, which models, who you are · gitignored | per machine, per person |
 | `.crew/techstack.md` | **the facts** — what exists and what it is called | on every dependency/structure change |
 | `.crew/operations.md` | **the procedures** — how to run, ship and debug it | on every environment/deploy change |
 
@@ -217,6 +230,7 @@ Add to `.gitignore`:
 
 ```gitignore
 .crew/plans-local/
+.crew-kit-config      # install.sh adds this one already — check before duplicating
 ```
 
 Leave `hardenings/`, `techstack.md` and `operations.md` versioned — they are for the team, not for

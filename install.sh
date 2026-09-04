@@ -65,6 +65,18 @@ copy_if_absent() {
 }
 mkdir -p "$TARGET_ROOT/.github"
 copy_if_absent "$SOURCE_DIR/pull-request.md.template" "$TARGET_ROOT/.github/pull_request_template.md"
+copy_if_absent "$SOURCE_DIR/.crew-kit-config.example" "$TARGET_ROOT/.crew-kit-config.example"
+
+# The real .crew-kit-config says which agents THIS machine reaches and who is at the
+# keyboard. Committed, it means two people fighting over one file every session. The
+# entry is added here rather than left to the reader, because the cost of forgetting
+# is a personal roster in someone else's history.
+if [ -f "$TARGET_ROOT/.gitignore" ] && grep -qx '\.crew-kit-config' "$TARGET_ROOT/.gitignore"; then
+  :
+else
+  printf '\n# Your roster and your models — never committed (see .crew-kit-config.example)\n.crew-kit-config\n' >> "$TARGET_ROOT/.gitignore"
+  echo "  added .crew-kit-config to .gitignore"
+fi
 copy_if_absent "$SOURCE_DIR/AGENTS.md.template" "$TARGET_ROOT/AGENTS.md"
 copy_if_absent "$SOURCE_DIR/CLAUDE.md.template" "$TARGET_ROOT/CLAUDE.md"
 copy_if_absent "$SOURCE_DIR/START.md" "$TARGET_ROOT/START.md"
@@ -94,6 +106,8 @@ SOURCE_URL="$(git -C "$SOURCE_DIR" remote get-url origin 2>/dev/null || echo "$S
 } > "$DEST/crewwatch-version"
 
 echo "Installed the kit into $TARGET_ROOT ($VERSION, $COMMIT)."
+echo
+echo "Copy .crew-kit-config.example to .crew-kit-config and fill in your roster — it is gitignored."
 echo
 echo "The MCP servers are at .claude/mcp/. Copy the .mcp.json you want to the project root and"
 echo "point it at .claude/mcp/<server>/server.mjs — that is where the servers actually live."

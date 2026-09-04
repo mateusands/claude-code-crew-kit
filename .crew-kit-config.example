@@ -1,0 +1,65 @@
+# .crew-kit-config — yours, this machine, never committed
+
+# Copy this file to `.crew-kit-config` and fill it in. It is gitignored on purpose:
+# it says what YOU can reach and who YOU are, and none of that is true for the next
+# person who clones this repository.
+#
+# The split that matters:
+#
+#   .crew/info.md      the project's AUTHORITY — versioned, shared, the same for
+#                      everyone: who decides each gate, the red zone, the vendors
+#                      already approved. A new contributor must not have to guess
+#                      that touching auth needs an OK.
+#
+#   .crew-kit-config   YOUR ROSTER — which agents this machine actually reaches,
+#                      which models are configured, and whether you are the owner
+#                      or working for them.
+#
+# Committing the roster is how two people fight over one file every session: your
+# `crew` is their `solo`, because they never installed codex. Committing the
+# authority is how a new person inherits the rules instead of re-deriving them.
+
+
+# ─── Who you are, relative to the authority table ─────────────────────────────
+# The name you go by, and whether you are the OWNER named in .crew/info.md.
+#
+# This is the difference between "ask the owner" and "decide" — an agent telling
+# you to go ask yourself is a gate that does nothing.
+
+WHO_AM_I: <your name>
+I_AM_THE_OWNER: no          # yes | no
+
+
+# ─── What this machine can actually reach ─────────────────────────────────────
+# 🔴 Only list an agent you have installed, signed in, and seen answer. A roster
+# naming an agent that is not reachable is worse than an empty one: the process
+# then expects reviews that never happen, and nobody notices the absence.
+#
+# Check before writing it down, do not assume the MCP config implies the CLI.
+
+ORCHESTRATOR:   claude
+SECOND_COMPLEX: (none)      # the agent that reviews your work — codex, or (none)
+EXECUTORS:      (none)      # agy, copilot, or (none)
+BROWSER:        (none)      # playwright, or (none)
+
+
+# ─── The mode that follows from the roster ────────────────────────────────────
+# Not a preference — a consequence. It is the smaller of what the project allows
+# and what you can reach:
+#
+#   solo   one agent. No cross-review exists, so self-review must be DECLARED,
+#          and your host's own reviewers become the only second opinion.
+#   duo    two complex agents. Full review policy, no delegation.
+#   crew   two complex agents plus executors.
+#
+# With SECOND_COMPLEX at (none) this is solo, whatever you write here.
+
+MODE: solo
+
+
+# ─── Models actually configured here ──────────────────────────────────────────
+# So a report can say which model produced what. Leave out what you do not run.
+
+MODEL_CLAUDE:   claude-opus-5, effort high
+MODEL_CODEX:    <as set in ~/.codex/config.toml>
+MODEL_AGY:      <run `agy models` and pick one>
