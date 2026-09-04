@@ -91,7 +91,7 @@ update" changes an outcome.
 | `codereview` | senior review of the diff, with triage, severity and a verdict |
 | `complete-security-review` | full-repository security audit, with coverage stated as numbers |
 | `design-review` | visual craft — what `codereview` does not look at |
-| `local-testing` | prove it at runtime (L1→L4), not in a green suite |
+| `local-testing` | prove it at runtime (L1→L5), not in a green suite — and L5 asks whether the artifact is even deployed |
 | `local-environment` | bring up, seed and drive the dev environment |
 | `backend` | server conventions: layers, validation, errors, authz |
 | `frontend` | UI conventions: design system, data, states, theming |

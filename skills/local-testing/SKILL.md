@@ -1,11 +1,11 @@
 ---
 name: local-testing
-description: Tiered validation (L1 suite+build · L2 the production artifact opens · L3 real flow with real data · L4 hostile environment) of any change, with the recipe for computing the expected value before looking at the screen and the traps that have already produced "false green". Use before saying any change is done.
+description: Tiered validation (L1 suite+build · L2 the production artifact opens · L3 real flow with real data · L4 hostile environment · L5 the artifact is actually deployed where you are judging it) of any change, with the recipe for computing the expected value before looking at the screen and the traps that have already produced "false green". Use before saying any change is done.
 ---
 
 # Local testing — prove it at runtime, not in the suite
 
-- **Can:** run the suite, the build, the shipped artifact and the real flow — L1 through L4.
+- **Can:** run the suite, the build, the shipped artifact and the real flow — L1 through L5.
 - **Must:** compute the expected value *before* looking at the screen, and declare the level you actually reached.
 - **Cannot:** treat a green suite as proof, or edit the implementation to make a check pass.
 
@@ -108,6 +108,36 @@ Runs when the change touches global CSS, layout, bundling or integration with a 
 - **a deliberately hostile host page** — global reset, `!important`, large font, dark background,
   high z-index elements — plus a **control page** without your change;
 - **a real or emulated device**, not just the desktop window.
+
+---
+
+## L5 — the artifact is actually in the environment you are judging
+
+🔴 **Runs before you call anything done that leaves your machine.** L1 to L4 all stop at *exercised
+locally*, and "exercised locally" is not "shipped" — the two get conflated at exactly the moment
+someone declares a fix complete.
+
+Three questions, in order, and none of them takes more than a few seconds:
+
+1. **Did the build that contains this change finish?** Not "did I push" — did the pipeline for *this
+   commit* complete.
+2. **Is that build what the environment is serving?** Compare something identifying — the commit, the
+   asset hash, a version endpoint, the console banner — against what you built.
+3. **Only then, exercise it there.**
+
+Measured in the field: a change was declared ready and tested in an environment that had **not
+deployed it yet**. The verdict was "the fix does not work", reached with every apparent reason,
+against code that was not running. The round after it was spent re-investigating a fix that had never
+been on the wire.
+
+⚠️ **The failure mode is the expensive one — it looks like a real defect.** A test against a stale
+artifact does not error; it produces a perfectly coherent wrong answer, and the whole team then
+debugs a phantom. The five seconds this level costs buy you the difference between "it is broken" and
+"it is not there".
+
+**On delivery, say which artifact you tested**, not just that you tested. `commit abc1234, served at
+<url>, confirmed by <what you compared>` is a sentence a reader can check; "verified in staging" is
+not.
 
 ---
 

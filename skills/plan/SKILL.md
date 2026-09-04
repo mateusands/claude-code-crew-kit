@@ -255,7 +255,7 @@ callers · consumers · boundaries · twins · fallback/dead · today's test
 chosen shape (delete/change/add/rewrite) + the explicit boundary
 ## Gates (run: … / N/A: …)
 ## Test — SDD → BDD → TDD (which fails first, in which file)
-## Validation (L1/L2/L3) — and **what will NOT be validated**
+## Validation (L1–L5) — and **what will NOT be validated**
 ## Risk · rollback · rollout order
 ## Deviations — empty at plan time; `coder` fills it (OPEN → ADDRESSED → INCORPORATED)
 ## Verdict
