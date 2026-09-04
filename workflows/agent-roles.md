@@ -88,6 +88,30 @@ So the tier widens on two conditions, and neither is a preference:
 Take either condition away and this stops being a wider tier and becomes an unsupervised one. What
 makes a medium slice safe is not the model's quality; it is that two other agents bracket it.
 
+### How to wait for a delegated call
+
+🔴 **Start it, then `*_await`. Never poll `*_status` in a loop.**
+
+```
+*_start × N   handles in milliseconds; the session stays yours
+*_await       instant if they already finished; otherwise your host backgrounds it
+              and notifies you the moment it settles
+```
+
+Nothing pushes a result at you: an MCP server answers what it is asked and cannot wake a session. The
+completion signal comes from the host backgrounding a call that is *waiting*, which is the one thing
+`*_status` never does. So polling feels like the safe choice and is the only choice that guarantees
+you are told nothing — it burns a turn each time and loses the notification that `*_await` would have
+delivered.
+
+Measured in the field: an orchestrator with the right setting already in `settings.json` polled
+`*_status` twice anyway, and the human had to ask "anything?" twice, because the protocol was written
+in the MCP docs and in the tool descriptions — neither of which is what an agent reads when deciding
+how to work.
+
+`settings.json` ships `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000` so that waiting costs seconds of your
+turn rather than two minutes.
+
 🔴 **Review is where delegation pays most, and implementation is where it pays least.** Measured in
 production: one delegated review returned ten findings that all held up, three of them serious and
 already missed by a careful first-party pass — while three of that day's four production bugs came

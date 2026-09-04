@@ -39,6 +39,12 @@ orchestrator, and it is not self-review.
 — it touched something the plan did not anticipate, or the executor stopped mid-task. Full policy:
 [`.claude/workflows/agent-roles.md`](../../workflows/agent-roles.md).
 
+
+🔴 **Delegating any part of this?** Start it and then `*_await` — never poll `*_status` in a loop.
+Polling is the one call that guarantees you are told nothing: the completion notification comes from
+your host backgrounding a call that is *waiting*. See
+[`../../workflows/agent-roles.md`](../../workflows/agent-roles.md#how-to-wait-for-a-delegated-call).
+
 ## Step −1 — run your host's reviewer too, not only this skill
 
 This skill is one lens. Whatever agent is reading it also has a reviewer of its own, tuned to its

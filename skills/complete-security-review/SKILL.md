@@ -34,6 +34,12 @@ minutes.
 
 ---
 
+
+🔴 **Delegating any part of this?** Start it and then `*_await` — never poll `*_status` in a loop.
+Polling is the one call that guarantees you are told nothing: the completion notification comes from
+your host backgrounding a call that is *waiting*. See
+[`../../workflows/agent-roles.md`](../../workflows/agent-roles.md#how-to-wait-for-a-delegated-call).
+
 ## Step 0 — establish the map and the denominators
 
 Before looking for anything, count what exists. These numbers appear in the final report.
