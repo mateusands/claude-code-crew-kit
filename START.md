@@ -122,9 +122,37 @@ Go through each surviving skill and swap the abstract for the concrete:
 | "application errors through one path only" | "throw `<the project's real error class>`; the central handler is at `<file:line>`" |
 | "the types come from the shared place" | "types come from `<the real path>`" |
 | "check the layer (`{{LAYERS}}`)" | the real layer names of this project, in order |
-| "run the suite" | the real command, with the real current test count as the baseline |
+| "run the suite" | the real command — and **not** the current test count, see below |
 
 **Cite `file:line` wherever you can.** A path is worth ten sentences of description.
+
+#### 🔴 What goes in a skill, and what must stay a command
+
+A skill carries **what the repository cannot answer**. For everything the repository *can* answer, it
+points at the command instead.
+
+| | |
+|---|---|
+| **Never write into a skill** | test counts, package versions, branch state, file counts, "N suites / M tests" — anything a command re-derives in seconds |
+| **Write into a skill** | why a decision was made, what an incident cost, which trap has already been paid for, the order of the layers, where a rule is owned |
+
+A number with an expiry date inside a skill becomes a **lie** the next agent acts on, and it does not
+announce itself: it is read as fact precisely because a skill is where facts are trusted. Measured in
+the field on a kit installed from here — a test baseline stated in three skills was wrong, and it was
+being used as the regression ruler ("the ruler is equality"). A wrong ruler measures nothing. Version
+tables in the same kit had a merged branch listed as unmerged, so the stack described was two majors
+behind the stack that existed.
+
+```
+Wrong:  "72 suites / 647 tests — the ruler is equality"
+Right:  "run {{CMD_TEST}} and record the number before you change anything; that is your baseline"
+
+Wrong:  "React 17 in prod, 18 on an unmerged branch"
+Right:  "read the versions from the manifest: node -p on package.json, or the lockfile"
+```
+
+A war story is the opposite case and belongs inline: nothing in the code tells you what an incident
+cost, so there is no command to point at.
 
 ### 4c. Keep the war stories, add the project's own
 

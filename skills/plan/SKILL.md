@@ -45,6 +45,28 @@ makes the next fix skip planning entirely.
 
 When torn between two levels, go up one. But **declare** which you chose and why.
 
+### The radius of NOT acting
+
+🔴 **The table above only weighs the risk of changing something. During an incident the larger radius
+is on the other side, and the kit has never had a term for it.**
+
+Production is broken. Every minute of full ceremony is a minute of the outage, and that cost belongs
+in the same equation as the risk of a bad fix — not outside it, and not as an excuse to skip gates.
+
+So an incident does not remove steps. **It narrows scope and puts the clock in writing:**
+
+| | |
+|---|---|
+| **State the radius of not fixing** | who is affected, what they cannot do, since when. This is the number that sets the ceiling, and without it "urgent" is a feeling |
+| **Scope closes to blocking defects only** | anything that is not restoring service is a separate plan, written down and not done now. An incident is where scope creep is most tempting and most expensive |
+| **The short plan is still required** | measured cause, the fix, the rollback point. Three items, not seven — but the diagnosis table (Step 0) does **not** get skipped: shipping the wrong cause during an outage extends it |
+| 🔴 **Cross-review stays** | it is the gate that most earns its keep here. A fix written under time pressure by someone who has been staring at the same code for an hour is exactly the diff that needs other eyes |
+| **Declare the mode** | say "incident" in the plan, so the reader knows what was traded and can tell a narrow plan from a lazy one |
+
+The trade being made is **scope**, never **verification**. A fix that restores service and breaks
+something else has not ended the incident, it has renamed it — and that is the failure this ordering
+exists to prevent.
+
 ## Investigate before asking
 
 Read the code and `{{SOURCE_OF_TRUTH}}` **first**. Anything discoverable in under a minute of
@@ -107,6 +129,21 @@ see*. If that sentence does not come out, the problem is not defined yet — ask
 - **Is it a fix or a feature?** A fix requires a **reproduction scenario** (input → what happens →
   what should happen). If you cannot reproduce it, **the first phase of the plan is to reproduce**,
   not to fix.
+- 🔴 **One measurement per symptom. Reproducing is not diagnosing.** List every symptom this fix
+  promises to resolve, and next to each one, the measurement that proves this cause produces *that*
+  symptom. Symptoms that look like they share a cause need **two measurements, not one measurement and
+  an inference** — the inference is where a fix that passes every review still fails to fix anything.
+
+  Measured in the field: a mechanism was proven, it explained symptom A, and symptom B was assumed to
+  follow. The plan review approved the design and the code review approved the code — both correctly,
+  because the error was in the cause, not in the solution. Nothing asked which measurement covered B.
+
+  | Symptom | Cause claimed | Measurement that proves it | |
+  |---|---|---|---|
+  | what the user reports | the mechanism | the observation that links this cause to *this* symptom | ✓ / not yet measured |
+
+  A row you cannot fill is not a gap in the table — it is the plan claiming something it has not
+  shown. Say so, and either measure it or drop that symptom from what the fix promises.
 - **Was this already decided?** Check against previous session records. Reopening a recorded
   decision without saying you are reopening it is a process error.
 - **Do two readings produce different work?** Ask now. Half an implementation discovered at the end
@@ -229,6 +266,7 @@ read as full coverage.
 **Base branch:** <…> · **Rollback:** <SHA> · **Skills:** <the ones that apply>
 
 ## Goal (in MY words) + acceptance criteria
+## Diagnosis — one row per symptom, each with the measurement that proves the cause
 ## Blocking questions (0–3) — each with a recommended default
 ## Assumptions (numbered, specific, falsifiable)
 ## Current state (verified in the code, not assumed)
@@ -239,7 +277,7 @@ callers · consumers · boundaries · twins · fallback/dead · today's test
 chosen shape (delete/change/add/rewrite) + the explicit boundary
 ## Gates (run: … / N/A: …)
 ## Test — SDD → BDD → TDD (which fails first, in which file)
-## Validation (L1/L2/L3) — and **what will NOT be validated**
+## Validation (L1–L5) — and **what will NOT be validated**
 ## Risk · rollback · rollout order
 ## Deviations — empty at plan time; `coder` fills it (OPEN → ADDRESSED → INCORPORATED)
 ## Verdict

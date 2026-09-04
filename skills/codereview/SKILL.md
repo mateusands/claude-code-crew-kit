@@ -39,6 +39,12 @@ orchestrator, and it is not self-review.
 — it touched something the plan did not anticipate, or the executor stopped mid-task. Full policy:
 [`.claude/workflows/agent-roles.md`](../../workflows/agent-roles.md).
 
+
+🔴 **Delegating any part of this?** Start it and then `*_await` — never poll `*_status` in a loop.
+Polling is the one call that guarantees you are told nothing: the completion notification comes from
+your host backgrounding a call that is *waiting*. See
+[`../../workflows/agent-roles.md`](../../workflows/agent-roles.md#how-to-wait-for-a-delegated-call).
+
 ## Step −1 — run your host's reviewer too, not only this skill
 
 This skill is one lens. Whatever agent is reading it also has a reviewer of its own, tuned to its
@@ -374,6 +380,29 @@ When using `ReportFindings`, fill in `category` and order from most to least sev
 - **Scale with the target:** a 3-file diff does not need this.
 
 ---
+
+## When to stop reviewing — read what the rounds are finding, not how many there were
+
+A round that keeps finding real defects has earned the next one. The question is never *how many
+rounds*, it is **what kind of thing each round finds** — and a count is the wrong instrument, because
+stopping at three would have been wrong in the case that produced this rule: five rounds on a ~60-line
+fix, each one finding something real, with production down the whole time.
+
+| What the latest round found | What that means |
+|---|---|
+| A **new class** of defect — a risk nobody had looked at yet | Keep going. The surface is still unexplored |
+| **Another instance of a class already found** | Stop reviewing and change the code. Round N+1 will find instance three |
+| Only **nits and preferences** | Done. Say so and close it |
+| Nothing, on a diff that has been changing every round | Suspect the review, not the diff — see the intermittency rule in `agent-roles.md` |
+
+🔴 **Repeated instances of one class are a finding about the shape of the change, not about the
+review.** Three rounds each catching a different place the same invariant was violated is the diff
+telling you it is wrong-shaped: the fix is to restructure so the invariant cannot be violated, not to
+review until every site is caught by hand. Say that out loud in the verdict — "this is the third
+instance of X; the shape is the problem" is worth more than a fourth list.
+
+**Rounds are not free while something is broken.** Under an incident, name the cost you are spending
+in the verdict, so continuing is a decision someone makes rather than a default.
 
 ## Finish with a VERDICT, not just the list
 
