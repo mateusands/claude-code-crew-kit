@@ -9,11 +9,14 @@
 
 ## Read these first
 
-1. **`{{RECORDS_DIR}}/info.md`** — who is in the crew and who decides. Read it fresh at every gate,
-   never from memory.
-2. **`{{RECORDS_DIR}}/techstack.md`** — what the stack is.
-3. **`{{RECORDS_DIR}}/operations.md`** — how it runs.
-4. **This file** — the rules.
+1. **`{{RECORDS_DIR}}/info.md`** — the project's authority: who decides each gate, what needs written
+   permission. Versioned, the same for everyone. Read it fresh at every gate, never from memory.
+2. **`.crew-kit-config`** — this machine's roster: which agents are actually reachable, which models,
+   and whether you are `{{OWNER}}` or working for them. Gitignored, so it differs per person. If it is
+   missing, assume `solo` and say so — never assume a reviewer you have not seen answer.
+3. **`{{RECORDS_DIR}}/techstack.md`** — what the stack is.
+4. **`{{RECORDS_DIR}}/operations.md`** — how it runs.
+5. **This file** — the rules.
 
 The skills in `.claude/skills/` are the procedures. `{{RECORDS_DIR}}/info.md` is the authority. When
 they disagree about who may do something, **`info.md` wins**.

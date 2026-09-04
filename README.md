@@ -66,7 +66,8 @@ update" changes an outcome.
 ├── START.md                    # 👈 the agent's onboarding protocol — start here
 ├── AGENTS.md.template          # the shared contract, read by every agent
 ├── CLAUDE.md.template          # thin — imports AGENTS.md, plus Claude-only notes
-├── crew-info.md.template       # the mode and the roster → .crew/info.md
+├── crew-info.md.template       # the project's authority → .crew/info.md (versioned)
+├── .crew-kit-config.example    # your roster and models → .crew-kit-config (gitignored)
 ├── pull-request.md.template    # PR body → .github/pull_request_template.md, so GitHub fills it
 ├── SECURITY.md.template        # vulnerability disclosure policy (public repos)
 ├── install.sh                  # installs the kit into a project, and stamps the version
@@ -150,8 +151,17 @@ hardening is knowledge — what was decided, why, and which traps have been paid
 
 ## Modes — one agent, two, or the whole crew
 
-Set the mode in `.crew/info.md` (from [`crew-info.md.template`](crew-info.md.template)). It is read at
-the start of every session **and again at every gate**, never from memory.
+Authority lives in `.crew/info.md` (from [`crew-info.md.template`](crew-info.md.template)), versioned
+and shared. Your roster lives in `.crew-kit-config` at the repository root, gitignored — which agents
+*this machine* reaches, which models, and whether you are the owner.
+
+**The mode is the smaller of the two**, not a preference: a project that permits `crew` runs `solo` on
+a machine with one agent. Both files are read at the start of every session **and again at every
+gate**, never from memory.
+
+Splitting them is what stops two people fighting over one file every session — your `crew` is their
+`solo`, because they never installed codex — while still letting a new contributor inherit the rules
+instead of re-deriving them. Same principle as `settings.json` versus `settings.local.json`.
 
 | Mode | Roster | What changes |
 |---|---|---|

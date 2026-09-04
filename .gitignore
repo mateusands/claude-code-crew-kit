@@ -27,3 +27,6 @@ crew-tests/
 
 # Design notes and scratch — kept locally, not part of the kit.
 docs/
+
+# The kit developer's own roster, if this repo is ever used with itself
+.crew-kit-config

@@ -309,8 +309,9 @@ Four places, all required — an agent wired but not documented is one the next 
 4. **[`../../workflows/agent-roles.md`](../../workflows/agent-roles.md)** — add the row: model, tier,
    what it takes, who reviews its output. **Its code is reviewed by the session's orchestrator**, like
    every low-risk executor. Record the role **the human chose**, not the default you proposed.
-5. **`{{RECORDS_DIR}}/info.md`** — add it to the roster, and update the mode if this moves the project
-   from `duo` to `crew`. An agent wired but absent from the roster will not be used, because `info.md`
+5. **`.crew-kit-config`** — add it to the roster there, not in `info.md`: the roster is per machine
+   and gitignored. Update the mode if this moves you from `duo` to `crew`. An agent wired but absent
+   from the roster will not be used, because the roster
    is the authority every session reads.
 
 ## 7. Report to the human
