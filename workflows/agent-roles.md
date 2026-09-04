@@ -155,6 +155,35 @@ trip is the price of the wider tier — if it is not worth paying, the slice was
 after all** — it touched something the plan did not anticipate, or the executor stopped mid-task and
 the result is partial. That is a re-route, not a formality.
 
+### A reviewer that answers is not a reviewer that reviewed
+
+🔴 **Review is complete when a verdict comes back in the format the skill asks for. Nothing else
+counts as a pass** — and "it replied" is the failure that looks most like success.
+
+The kit already says what to do when there is no second complex agent: declare `solo` and say so. It
+said nothing about the case that actually happens, which is worse: the reviewer is **intermittent**.
+Measured in the field across roughly eleven calls — one died after 19 minutes with no output at all,
+and another lost itself trying to delegate to an orchestration tool and returned that tool's
+documentation instead of an analysis. Neither is an absent reviewer. Both are answers, and an answer
+with no verdict in it gets read as "reviewed, nothing found".
+
+| What came back | What it is |
+|---|---|
+| A verdict in the requested format, with findings or an explicit "none" | **Reviewed.** Proceed |
+| Prose, a summary, documentation, an apology, an empty result | **Not reviewed.** It is a non-answer, never an approval |
+| Nothing, past the ceiling below | **Not reviewed.** Same as above |
+
+**Set a ceiling before you call.** Something like twice what the review should take, named up front.
+When it blows, do not retry by reflex — a second identical call usually fails identically and costs
+the same again.
+
+🔴 **Degrade the step, not the session.** A review that did not complete makes *this step* `solo`, and
+that must be stated in the report: *"cross-review did not complete for this diff; self-review only."*
+The roster in `{{RECORDS_DIR}}/info.md` does not change, and the next step tries the reviewer again.
+Downgrading the whole session because one call failed throws away the gate for work that would have
+gotten it; silently continuing is worse, because the report then implies a second opinion that never
+happened.
+
 ### How to run the cross review
 
 The reviewer runs the [`codereview`](../skills/codereview/SKILL.md) skill, including its **Step −1**
