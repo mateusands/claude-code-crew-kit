@@ -13,7 +13,7 @@ The error you prevent always fails the same way: **the `grep` is done by the IDE
 CONCEPT**. An identifier is the name the code uses here; a concept is the decision the code makes.
 **Two screens can make the same decision without sharing a single word.**
 
-Real case: the fix was "this screen picks the wrong default destination". The search by field name
+The shape: a fix framed as "this screen picks the wrong default destination". The search by field name
 found **one** call site. The search by concept — *"who else picks a default out of a list?"* — found a
 twin with a **wider** reach than the original bug, plus a third screen that was already doing it right.
 Three copies silently diverging.

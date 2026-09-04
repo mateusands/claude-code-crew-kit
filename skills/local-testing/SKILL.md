@@ -12,9 +12,10 @@ description: Tiered validation (L1 suite+build · L2 the production artifact ope
 **A green suite is not proof that it works.** The test runs in one environment; the product runs in
 another.
 
-> Real case from this fleet: **1h20 of application downtime** with **421 green tests, a clean
-> typecheck and a successful build**. A transitive dependency touched a Node API inside the browser
-> bundle. All three checks run in Node — none of them is the browser.
+> Measured in this kit: **21 tests passing while the git audit had four holes**, including one that
+> let an executor overwrite any file the human was already editing without a word. Every one of those
+> tests started from a **clean working tree**, which is not what a repository in use looks like. The
+> suite was not lying — it was answering a question nobody had asked it.
 
 The levels are **cumulative**: L3 without L1 is theater; L1 without L3 is faith.
 
@@ -70,7 +71,7 @@ in the render path takes down the whole tree (blank screen), it does not degrade
 
 > 🎭 **This is the level the Playwright MCP server changes the most.** L2 is a yes/no question — does
 > the built artifact open without console errors? — and a browser answers it in seconds. Without one,
-> L2 tends to get skipped, which is exactly how the 1h20 incident above got through. See
+> L2 tends to get skipped, which is how a whole class of defect reaches production untouched. See
 > `mcp/README.md`.
 
 ## L3 — real flow, with real data
@@ -125,10 +126,10 @@ Three questions, in order, and none of them takes more than a few seconds:
    asset hash, a version endpoint, the console banner — against what you built.
 3. **Only then, exercise it there.**
 
-Measured in the field: a change was declared ready and tested in an environment that had **not
-deployed it yet**. The verdict was "the fix does not work", reached with every apparent reason,
-against code that was not running. The round after it was spent re-investigating a fix that had never
-been on the wire.
+The failure it prevents: a change declared ready and tested in an environment that had **not deployed
+it yet**. The verdict comes back "the fix does not work", reached with every apparent reason, against
+code that was not running — and the next round is spent re-investigating a fix that was never on the
+wire.
 
 ⚠️ **The failure mode is the expensive one — it looks like a real defect.** A test against a stale
 artifact does not error; it produces a perfectly coherent wrong answer, and the whole team then

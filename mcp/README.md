@@ -137,18 +137,17 @@ Two structural reasons, not model quality:
 `codex` is the exception on the first point: it runs commands inside its sandbox, so it can check its
 own work. It is also the one that produced the review above.
 
-## 🪤 Two traps paid for in the field
+## 🪤 Two traps that cost a round each
 
-**An unbounded review does not terminate.** Measured on a real project running this kit: two attempts
-at *"review this broadly"* investigated until they blew their budget and produced **no verdict at
-all**. The same work, cut into **five specific questions with a word cap**, came back with a genuine
-🔴 finding in 40k tokens. An executor asked an open question keeps finding more to look at, because
+**An unbounded review does not terminate.** Two attempts at *"review this broadly"* investigated
+until they blew their budget and produced **no verdict at all**. The same work, cut into **five
+specific questions with a word cap**, came back with a genuine 🔴 finding in 40k tokens. An executor asked an open question keeps finding more to look at, because
 nothing tells it when it is done — the bound is not a cost saving, it is what makes the answer exist.
 Ask N questions, each answerable, each capped.
 
 **Your own edits look exactly like an executor stepping out of scope.** git records that a file
-changed, never who changed it. That same project delegated a job, kept working while it ran, and got
-three charter violations back — all three its own writes. Its workaround was to stop working in
+changed, never who changed it. Delegate a job, keep working while it runs, and the report comes back
+with charter violations naming your own writes — and the obvious workaround is to stop working in
 parallel, which is most of what delegation was for. So **say so**: pass `reserved_files` with the
 paths you are touching, or `orchestrator_writing: true` when you cannot name them in advance.
 Declaring one path is precise and leaves the verdict hard everywhere else; the flag is blunt and
@@ -193,9 +192,8 @@ backgrounding a call that is waiting. That call is `*_await`.
                  and notifies you the moment it settles
 ```
 
-Reported from the field: *`codex_start` hands back the handle, but nothing tells you it finished — you
-have to go and ask with `codex_status`.* That is what happens when `await` looks like blocking, so
-nobody calls it. At the **2-minute** default backgrounding threshold, awaiting right after starting really does
+The trap: `*_start` hands back the handle, and nothing tells you it finished — so you go and ask with
+`*_status`, in a loop. That is what happens when `await` looks like blocking, so nobody calls it. At the **2-minute** default backgrounding threshold, awaiting right after starting really does
 cost two minutes of a stalled turn — which is why `settings.json` now ships
 `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000`. With it, `await` frees the turn in seconds **and** still
 delivers the result as a notification.

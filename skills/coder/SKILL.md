@@ -42,11 +42,10 @@ your host backgrounding a call that is *waiting*. See
 An identifier is the name the code uses here; a concept is the decision the code makes. **Two screens
 can make the same decision without sharing a single word.**
 
-Real case from this fleet: the fix was "this screen picks the wrong default destination". The `grep`
-was done by the field name, found **one** call site, and moved on. The review later grepped by the
-*concept* (*"who else picks a default out of a list?"*) and found the twin — with a **wider** reach
-than the original bug — plus a third screen that was already doing it right. Three copies silently
-diverging.
+The shape: a fix framed as "this screen picks the wrong default destination". A `grep` by the field
+name finds **one** call site and stops. A `grep` by the *concept* — *"who else picks a default out of
+a list?"* — finds the twin, often with a **wider** reach than the original bug, plus a third place
+already doing it right. Three copies, silently diverging, and only one of them was fixed.
 
 The right question was not *"who else writes this field?"*. It was **"who else makes this decision?"**.
 

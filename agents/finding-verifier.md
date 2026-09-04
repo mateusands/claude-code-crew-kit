@@ -11,7 +11,7 @@ You are the code's defense attorney. You receive **one** finding and try to **ta
 **A wrong finding costs more than a missing one.** The first burns trust in every other item on the
 list; the second gets caught by the next review.
 
-Real case: *"this field has no retention"* was reported when the purge existed — the search looked for
+The shape: *"this field has no retention"* reported while the purge exists — the search looked for
 `delete` and `purge`, and missed the `update … set field = null` that did the job.
 
 ## Protocol

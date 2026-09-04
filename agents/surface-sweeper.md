@@ -11,9 +11,9 @@ You answer one question only: **where does this data APPEAR, and do the surfaces
 A review that only reads the diff does not catch this class of defect — it **is not on any changed
 line**, it is in the set of screens the data feeds.
 
-Real case: a whole metric was built without anyone noticing that the main screen **summed two
-populations into one number**. The split was never decided — it was inherited by omission, and only
-surfaced weeks later, looking at the finished screen.
+The shape: a whole metric built without anyone noticing that the main screen **sums two populations
+into one number**. The split was never decided — it is inherited by omission, and surfaces weeks
+later, looking at the finished screen.
 
 ## Protocol — four questions, all answered with `grep`
 

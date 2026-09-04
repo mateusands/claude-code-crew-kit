@@ -115,10 +115,10 @@ completion signal comes from the host backgrounding a call that is *waiting*, wh
 you are told nothing — it burns a turn each time and loses the notification that `*_await` would have
 delivered.
 
-Measured in the field: an orchestrator with the right setting already in `settings.json` polled
-`*_status` twice anyway, and the human had to ask "anything?" twice, because the protocol was written
-in the MCP docs and in the tool descriptions — neither of which is what an agent reads when deciding
-how to work.
+This is easy to get wrong precisely because polling feels safer: it never blocks, so it never looks
+like a mistake. An orchestrator that has the setting correctly in place will still poll if the
+protocol lives only in the MCP docs and the tool descriptions — neither of which is what an agent
+reads when deciding how to work. Hence this section.
 
 `settings.json` ships `CLAUDE_CODE_MCP_AUTO_BACKGROUND_MS=15000` so that waiting costs seconds of your
 turn rather than two minutes.
@@ -171,11 +171,12 @@ the result is partial. That is a re-route, not a formality.
 🔴 **Review is complete when a verdict comes back in the format the skill asks for. Nothing else
 counts as a pass** — and "it replied" is the failure that looks most like success.
 
-The kit already says what to do when there is no second complex agent: declare `solo` and say so. It
-said nothing about the case that actually happens, which is worse: the reviewer is **intermittent**.
-Measured in the field across roughly eleven calls — one died after 19 minutes with no output at all,
-and another lost itself trying to delegate to an orchestration tool and returned that tool's
-documentation instead of an analysis. Neither is an absent reviewer. Both are answers, and an answer
+The kit already says what to do when there is no second complex agent: declare `solo` and say so. The
+harder case is the reviewer that is **intermittent** — and it is worse, because it produces output.
+
+Two failures worth naming, both observed: a call that ran for nineteen minutes and returned nothing
+at all, and one that lost itself trying to delegate to an orchestration tool and returned that tool's
+documentation in place of an analysis. Neither is an absent reviewer. Both are answers, and an answer
 with no verdict in it gets read as "reviewed, nothing found".
 
 | What came back | What it is |
@@ -199,8 +200,8 @@ happened.
 
 🔴 **Do not send an external reviewer to go read a skill.** The example this section used to give did
 exactly that, and it is the anti-pattern: `codereview` is around 390 lines, and a reviewer that spends
-its budget reading a procedure file arrives at the diff with nothing left. Measured in the field —
-three reviews died that way before the pattern below was found by trial.
+its budget reading a procedure file arrives at the diff with nothing left. Reviews die that way
+silently: the reply comes back, it is just about nothing.
 
 **Put the domain inline, ask numbered questions, cap the answer, name the verdict format, and forbid
 delegation.**

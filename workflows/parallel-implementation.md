@@ -22,7 +22,7 @@ mistake. **Run this check honestly before spawning anything.**
 | The slices are only separable "in theory" — each needs the other's output | 🔴 sequential. That is a pipeline, not a fan-out |
 | The plan touches `{{CRITICAL_ASSET}}` or `{{RED_ZONE}}` | 🔴 not in parallel. One agent, full attention, full review |
 
-> Real case from this fleet: 3 agents ran in parallel in the SAME worktree and trampled each other —
+> What happens without it: 3 agents in the SAME worktree trample each other —
 > contaminated baseline, one reading another's Red as its own failure, `git status` full of a third
 > party's files. **The fix is not "warn them to be careful". It is file ownership.**
 
