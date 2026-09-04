@@ -45,6 +45,28 @@ makes the next fix skip planning entirely.
 
 When torn between two levels, go up one. But **declare** which you chose and why.
 
+### The radius of NOT acting
+
+🔴 **The table above only weighs the risk of changing something. During an incident the larger radius
+is on the other side, and the kit has never had a term for it.**
+
+Production is broken. Every minute of full ceremony is a minute of the outage, and that cost belongs
+in the same equation as the risk of a bad fix — not outside it, and not as an excuse to skip gates.
+
+So an incident does not remove steps. **It narrows scope and puts the clock in writing:**
+
+| | |
+|---|---|
+| **State the radius of not fixing** | who is affected, what they cannot do, since when. This is the number that sets the ceiling, and without it "urgent" is a feeling |
+| **Scope closes to blocking defects only** | anything that is not restoring service is a separate plan, written down and not done now. An incident is where scope creep is most tempting and most expensive |
+| **The short plan is still required** | measured cause, the fix, the rollback point. Three items, not seven — but the diagnosis table (Step 0) does **not** get skipped: shipping the wrong cause during an outage extends it |
+| 🔴 **Cross-review stays** | it is the gate that most earns its keep here. A fix written under time pressure by someone who has been staring at the same code for an hour is exactly the diff that needs other eyes |
+| **Declare the mode** | say "incident" in the plan, so the reader knows what was traded and can tell a narrow plan from a lazy one |
+
+The trade being made is **scope**, never **verification**. A fix that restores service and breaks
+something else has not ended the incident, it has renamed it — and that is the failure this ordering
+exists to prevent.
+
 ## Investigate before asking
 
 Read the code and `{{SOURCE_OF_TRUTH}}` **first**. Anything discoverable in under a minute of
