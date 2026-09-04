@@ -117,14 +117,29 @@ For each: is it authenticated, and separately, is it **authorized for this objec
 
 ### 7. Dependencies and supply chain
 
-```bash
-npm audit --omit=dev     # or: pip-audit · cargo audit · govulncheck
-```
+🔴 **Run the `dependencies` skill and fold its output into this report.** Do not re-derive it here
+with one `npm audit`. That command answers "is there a known advisory", which is the smallest of the
+questions this surface asks — it is silent about a build toolchain upstream has discontinued, about an
+overrides block hand-maintaining someone else's dependency tree, and about the packages the runtime
+now makes deletable. An audit that reports "0 vulnerabilities" on a dead toolchain has told you
+nothing, and told it confidently.
 
-- Versions pinned; a lockfile committed.
+What this sweep adds on top of that skill's output, because it is security-specific:
+
+- **Reachability**, restated as exploitability: an advisory in a dev-only or build-time package is a
+  different finding from one in the shipped bundle. Say which, per advisory.
+- **A deprecated or unmaintained dependency is itself a security finding**, not merely technical debt.
+  It has no upstream to publish a fix, so the next advisory against it has no patch — ever. Rank it by
+  that, not by how old it is.
+- **The overrides block**: every entry is a version this project pins by hand inside a tree it does not
+  own. Whatever is patching a real advisory must be recorded as such, or a future cleanup silently
+  reintroduces the CVE.
 - 🔴 **Licences** — any copyleft (GPL/AGPL/LGPL/SSPL) present without written authorization is a
   finding for the `compliance` gate, not a nitpick.
-- Install scripts from untrusted packages; typosquatting on recently added names.
+- **Install scripts** from untrusted packages; **typosquatting** on recently added names; a package
+  that changed maintainer recently.
+- **Lockfile committed and honoured in CI** — a build that resolves fresh versions at deploy time
+  ships something nobody reviewed.
 
 ### 8. Infrastructure and configuration
 
