@@ -345,3 +345,25 @@ while review only flags its absence. The ideas are his; the wording here is ours
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
+
+`install.sh` places a copy at **`.claude/LICENSE-crewwatch`** in the project you install into. That is
+deliberate: an install copies the skills, the workflows and the MCP servers into another repository,
+which is a substantial portion of this software, and MIT asks for the notice to travel with it. The
+file covers the kit only — it says nothing about the project that hosts it, which keeps whatever
+licence it already had.
+
+Keep it if you publish a repository containing these files. Nothing here asks for a link back or a
+badge; the notice is the whole obligation.
+
+⚠️ **If you gitignore parts of `.claude/`, un-ignore the notice.** A project that versions the skills
+but ignores `.claude/*` drops the licence with everything else — and then publishes the copy without
+the file that covers it, which is the exact situation this is meant to avoid:
+
+```gitignore
+.claude/*
+!.claude/skills/
+!.claude/LICENSE-crewwatch      # the notice goes wherever the copied files go
+```
+
+Ignoring `.claude/` **entirely** needs none of this: nothing is being distributed, so nothing needs
+the notice.

@@ -93,6 +93,14 @@ else
   cp -r "$SOURCE_DIR/mcp" "$DEST/mcp"
 fi
 
+# The MIT licence requires its notice to travel with copies or substantial portions,
+# and an install copies most of this kit into another repository. Shipping the servers,
+# the skills and the workflows while leaving the notice behind puts the person who
+# installed it out of compliance through no fault of their own — the tool never gave
+# them the file. It sits beside crewwatch-version because the two answer the same
+# question: where this came from, and under what terms.
+cp "$SOURCE_DIR/LICENSE" "$DEST/LICENSE-crewwatch"
+
 VERSION="$(git -C "$SOURCE_DIR" describe --tags --always 2>/dev/null || echo unknown)"
 COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 SOURCE_URL="$(git -C "$SOURCE_DIR" remote get-url origin 2>/dev/null || echo "$SOURCE_DIR")"
@@ -106,6 +114,9 @@ SOURCE_URL="$(git -C "$SOURCE_DIR" remote get-url origin 2>/dev/null || echo "$S
 } > "$DEST/crewwatch-version"
 
 echo "Installed the kit into $TARGET_ROOT ($VERSION, $COMMIT)."
+echo
+echo "The kit's MIT notice is at .claude/LICENSE-crewwatch. It covers the kit only, not your"
+echo "project — keep it if you publish a repository that contains these files."
 echo
 echo "Copy .crew-kit-config.example to .crew-kit-config and fill in your roster — it is gitignored."
 echo
