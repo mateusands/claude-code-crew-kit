@@ -126,6 +126,7 @@ what the diff touches**, and say at the end which gates you applied.
 | a data source with `??` · `COALESCE` · flag · legacy path | **Dead code and stale fallback** |
 | `{{SENSITIVE_DATA}}`, `{{RED_ZONE}}`, external service | the **`compliance`** gate (do not repeat its text here) |
 | the dependency manifest or a lockfile | the **license** gate (`compliance`) for anything new, and the **`dependencies`** skill for what is already there |
+| a new `resolutions` / `overrides` entry | ask what it patches and whether the parent is the real problem — a pin inside someone else's tree is debt taken on, and it needs the reason written where the next person will find it |
 | a changed line with a comment above it | the **`comments`** skill — a comment the diff made false is a lie the next reader acts on, and the author is the least likely to see it |
 | infra: `Dockerfile`, `compose`, CI, `deploy/` | **Infrastructure secrets and defaults** |
 | a function > ~30 lines, or a block repeated in 3+ places | **Simplification** |
