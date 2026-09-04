@@ -199,9 +199,9 @@ Run on **every** route/handler/middleware/serialization diff:
 
 ### Target runtime — WHERE does the diff run?
 
-> Real case from this fleet: the application vanished for every client for 1h20 because a transitive
-> dependency touched a Node API inside the browser bundle. It passed **421 green tests, a clean
-> typecheck and a successful build** — all three run in Node, none of them is the browser.
+> The shape to distrust: a transitive dependency reaching a Node API from inside a browser bundle. A
+> suite, a typecheck and a build all run in Node and all pass — none of them is the browser, so none
+> of them can see it. The symbol is `undefined` only where the user is.
 
 - **Wrong-environment API in the bundle** — directly or **through a transitive dependency**. The
   symbol becomes `undefined` and blows up at runtime.
@@ -217,9 +217,9 @@ Run on **every** route/handler/middleware/serialization diff:
 
 ### Surface — where does this data APPEAR? (trace to the screen)
 
-> Real case: a whole metric was built without anyone noticing that the main screen **summed two
-> populations into one number**. The split was never decided — it was inherited by omission, and only
-> surfaced weeks later. A review that only reads the diff does not catch it: the defect is not on any
+> The shape: a whole metric built without anyone noticing that the main screen **sums two
+> populations into one number**. The split was never decided — it is inherited by omission, and
+> surfaces weeks later. A review that only reads the diff does not catch it: the defect is not on any
 > changed line, it is in the **set of screens** the data feeds.
 
 For **every field/column/metric** the diff creates, changes or starts reading, answer in writing —
@@ -239,9 +239,9 @@ have a test?** If the answer to either is "I don't know", the review is not fini
 
 ### Dead code and stale fallback — what is still wired up with no owner
 
-> Real case: a card displayed ratings coming from a legacy fallback fed by a heuristic that scanned
-> text for a digit — the "1" from a menu became a rating. It stayed live for years because **nobody
-> revisits a fallback**: it does not show up in tests (the happy path uses the new source) and it does
+> The shape: a card displaying values from a legacy fallback fed by a heuristic — text scanned for a
+> digit, so a "1" from a menu becomes a rating. A fallback like that survives for years because
+> **nobody revisits one**: it does not show up in tests (the happy path uses the new source) and it does
 > not error.
 
 - **`??` / `COALESCE` / `fallback` / `legacy` / `dual-read`:** for each one, ask **when** the
@@ -333,8 +333,8 @@ Reviewing only the technique lets the expensive thing through: correct code solv
 ## Before reporting — precision beats coverage
 
 **A wrong finding costs more than a missing one.** The first burns trust in every other item on the
-list; the second gets caught by the next review. It has already happened in this fleet: "there is no
-retention" was reported when the purge existed — the search looked for `delete`/`purge` and missed the
+list; the second gets caught by the next review. The classic: "there is no retention" reported while
+the purge exists, because the search looked for `delete`/`purge` and missed the
 `update … set field = null` that did the job.
 
 Before writing each finding:
@@ -368,7 +368,7 @@ When using `ReportFindings`, fill in `category` and order from most to least sev
 
 ## If splitting into subagents — file ownership, not "dimension"
 
-> Real case: 3 agents ran in parallel in the SAME worktree and trampled each other — contaminated
+> What happens without it: 3 agents in the SAME worktree trampled each other — contaminated
 > baseline, one reading the other's Red as its own failure, `git status` full of a third party's files.
 
 - **Split by DIMENSION on reads** (security, business, duplication) — that is what produces findings a

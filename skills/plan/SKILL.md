@@ -134,9 +134,10 @@ see*. If that sentence does not come out, the problem is not defined yet — ask
   symptom. Symptoms that look like they share a cause need **two measurements, not one measurement and
   an inference** — the inference is where a fix that passes every review still fails to fix anything.
 
-  Measured in the field: a mechanism was proven, it explained symptom A, and symptom B was assumed to
-  follow. The plan review approved the design and the code review approved the code — both correctly,
-  because the error was in the cause, not in the solution. Nothing asked which measurement covered B.
+  How it goes wrong: a mechanism is proven, it explains symptom A, and symptom B is assumed to follow
+  because the story is coherent. Plan review approves the design and code review approves the code —
+  both correctly, each within its own question. Nothing asks which measurement covered B, and the fix
+  ships without resolving what was reported.
 
   | Symptom | Cause claimed | Measurement that proves it | |
   |---|---|---|---|

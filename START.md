@@ -156,10 +156,11 @@ cost, so there is no command to point at.
 
 ### 4c. Keep the war stories, add the project's own
 
-The kit's skills contain real incidents ("421 green tests and 1h20 of downtime", "the ratings fed by a
-regex heuristic"). **Do not delete them** — a rule with a story attached gets followed; a rule without
-one gets skimmed. They are marked as coming from another fleet, so they do not misrepresent this
-project.
+The kit's skills describe **shapes of failure** rather than bare rules — the suite that passes because
+every test starts from a clean tree, the fallback nobody revisits, the twin found by grepping the
+concept instead of the field. **Do not delete them**: a rule with a failure attached gets followed, a
+rule without one gets skimmed. They are written as shapes, not as incidents, so they do not claim
+anything about this project.
 
 Then add this project's own, as you find them: an odd guard in the code, a `git log` entry that
 explains a workaround, something the human tells you. Those go in `CLAUDE.md` under **"Traps already
