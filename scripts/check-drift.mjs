@@ -46,17 +46,20 @@ function walk(dir, out = []) {
   return out;
 }
 
+// `.claude/` is what makes this an installed project. Without it, the root AGENTS.md and
+// START.md are the kit's own SOURCE, whose links point at where the files LAND rather than
+// where they sit — so checking them here reports drift that installing would resolve.
+if (!existsSync(join(ROOT, ".claude"))) {
+  console.error("check-drift: no .claude/ here, so this is not a project the kit is installed in.");
+  console.error("Run it from the root of one. (In the kit's own repository, `npm test` covers this.)");
+  process.exit(2);
+}
+
 const docRoots = [".claude", ".crew"].map((d) => join(ROOT, d)).filter(existsSync);
 const docs = docRoots.flatMap((d) => walk(d)).filter((f) => f.endsWith(".md"));
 for (const name of ["AGENTS.md", "CLAUDE.md", "START.md"]) {
   const p = join(ROOT, name);
   if (existsSync(p)) docs.push(p);
-}
-
-if (docs.length === 0) {
-  console.error("check-drift: no kit documents found under .claude/ or .crew/.");
-  console.error("Run this from the root of a project the kit is installed in.");
-  process.exit(2);
 }
 
 /* ── 1. links ─────────────────────────────────────────────────────────────── */
