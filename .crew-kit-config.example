@@ -21,6 +21,13 @@
 
 
 # ─── Who decides here, and whether that is you ────────────────────────────────
+# 🔴 OWNER in this kit means WHO DECIDES — the person a gate sends you to for
+# authorization. It is NOT whoever owns the repository. In your own project the
+# two are the same person and the distinction never comes up; in a clone of
+# someone else's they are different people, and it is the deciding one that every
+# skill here means. Upstream can own the repository and decide nothing about your
+# copy, and that alone is not a reason to override anything below.
+#
 # `.crew/info.md` names the project's OWNER. That name is versioned on purpose:
 # whoever clones tomorrow has to inherit "touching auth needs an OK from X"
 # rather than guess it. Unversioning authority trades a conflict for an absence,

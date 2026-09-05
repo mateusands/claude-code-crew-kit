@@ -64,7 +64,7 @@ Every fact that changes from repo to repo is marked `{{KEY}}` across the kit.
 | Placeholder | Where you find the answer |
 |---|---|
 | `{{PROJECT}}` | manifest name, or ask |
-| `{{OWNER}}` | ask. This is the person who decides — it is never inferable |
+| `{{OWNER}}` | ask. **The person who DECIDES**, never whoever owns the repository — in a clone or a fork those are different people, and every gate means the first. Never inferable |
 | `{{SOURCE_OF_TRUTH}}` | usually `CLAUDE.md`; ask if the project uses a vault/wiki |
 | `{{RECORDS_DIR}}` | default `.crew` (see Step 5) |
 | `{{PKG_MANAGER}}` | the lockfile tells you: `pnpm-lock.yaml` → pnpm, `poetry.lock` → poetry… |

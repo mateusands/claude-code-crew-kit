@@ -310,7 +310,7 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 | Placeholder | What it is | Example |
 |---|---|---|
 | `{{PROJECT}}` | project name | `PDF Manager` |
-| `{{OWNER}}` | who decides (product owner) | `Mateus` |
+| `{{OWNER}}` | who **decides** — not who owns the repository | `Mateus` |
 | `{{SOURCE_OF_TRUTH}}` | where the context lives | `CLAUDE.md` |
 | `{{RECORDS_DIR}}` | the project's memory directory | `.crew` |
 | `{{PKG_MANAGER}}` | package manager | `pnpm` · `yarn` · `pip` |
