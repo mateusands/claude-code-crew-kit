@@ -34,7 +34,7 @@ Read, in this order:
    git status --short && git branch --show-current && git log --oneline -10
    ```
 
-### If `info.md`, `techstack.md` or `operations.md` do not exist, create them now
+### If `info.md`, `language.md`, `techstack.md` or `operations.md` do not exist, create them now
 
 🔴 **The roster is not in `info.md`.** Read `.crew-kit-config` at the repository root for which agents
 this machine actually reaches; `info.md` holds only the project's authority. If `.crew-kit-config` is

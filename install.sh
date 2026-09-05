@@ -57,7 +57,7 @@ cp -r "$SOURCE_DIR/skills" "$SOURCE_DIR/agents" "$SOURCE_DIR/commands" "$SOURCE_
 # follow, and a description of the repository that quietly stopped being true is the one
 # defect no amount of reading catches.
 cp -r "$SOURCE_DIR/scripts" "$DEST/scripts"
-cp "$SOURCE_DIR/settings.json" "$SOURCE_DIR/crew-info.md.template" "$DEST/"
+cp "$SOURCE_DIR/settings.json" "$SOURCE_DIR/crew-info.md.template" "$SOURCE_DIR/crew-language.md.template" "$DEST/"
 
 # Root files: never clobber one the project already has.
 copy_if_absent() {
@@ -85,7 +85,7 @@ copy_if_absent "$SOURCE_DIR/AGENTS.md.template" "$TARGET_ROOT/AGENTS.md"
 copy_if_absent "$SOURCE_DIR/CLAUDE.md.template" "$TARGET_ROOT/CLAUDE.md"
 copy_if_absent "$SOURCE_DIR/START.md" "$TARGET_ROOT/START.md"
 
-# 🔴 Under .claude/, not at the project root. Every .mcp.json example this kit ships
+# Under .claude/, not at the project root. Every .mcp.json example this kit ships
 # already says `.claude/mcp/<server>/server.mjs`, and every relative link inside mcp/**
 # points at ../agents, ../skills and ../workflows — which land in .claude/. Installed at
 # the root those six links resolved to directories that do not exist there, and the

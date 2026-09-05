@@ -131,6 +131,7 @@ Created by the agent during onboarding, maintained by `start-session` and `end-s
 
 ```
 .crew/
+├── language.md       # the WORDS this project uses, and the ones it retired
 ├── techstack.md      # what the stack IS: versions, commands, structure
 ├── operations.md     # how it RUNS: environments, deploy, branches, ports, seeds
 ├── plans-local/      # plans, by day · retention 7 days · gitignored
@@ -143,6 +144,13 @@ Created by the agent during onboarding, maintained by `start-session` and `end-s
 redundant with the code, so `plans-local/` expires after 7 days and `start-session` clears it. A
 hardening is knowledge — what was decided, why, and which traps have been paid for — so
 `hardenings/` **never expires** and is versioned for the team.
+
+**`language.md` is the shortest file and the one that pays first.** An agent with no name for a thing
+describes it in twenty words, does it again next session, and invents a third name on the way. One
+shared term collapses all of that — *"a problem in the materialization cascade"* rather than *"a
+problem when a lesson inside a section of a course is given a real place in the file system"* — and
+the payoff is not only concision: variables, functions and files end up named consistently, and the
+codebase becomes navigable by the words the humans already use.
 
 > Both paths come from `{{RECORDS_DIR}}`, which defaults to `.crew`. Change it if the project already
 > has a convention.

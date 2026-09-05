@@ -1,0 +1,62 @@
+# `{{RECORDS_DIR}}/language.md` — the words this project uses
+
+> Copy this to `{{RECORDS_DIR}}/language.md` and fill it in from the code. **Versioned**, like
+> `info.md`: the words are the project's, not one person's.
+>
+> Every agent reads it at the start of a session. It is short on purpose — a glossary nobody can hold
+> in their head is a glossary nobody uses.
+
+## Why this file exists
+
+An agent dropped into a repository has to describe things it has no name for, so it spends twenty
+words where one would do, and it spends them **again in the next session**. Worse, it invents its own
+names as it goes, and the third one is different from the first two.
+
+One shared word fixes all of that at once:
+
+> **before** — "there is a problem when a lesson inside a section of a course is given a real place
+> in the file system"
+> **after** — "there is a problem in the materialization cascade"
+
+The payoff compounds past concision: variables, functions and files get named consistently, the
+codebase becomes navigable by the same words the humans use, and the agent spends less of its
+thinking on translation.
+
+🔴 **This is a record of the words the project already uses, not a place to invent better ones.** A
+term you coined here that appears nowhere in the code is a term the next agent will use and nobody
+will recognise. If the code and this file disagree, the code wins and this file gets corrected.
+
+## Terms
+
+> One entry per term that a newcomer would get wrong. Not one per class. The test is whether two
+> people have already meant different things by it.
+
+**\<Term\>**
+: What it is, in one or two sentences, naming the `file:line` where it lives if it has one.
+  *Avoid:* the other words people have used for this, so they stop being used.
+
+**\<Term\>**
+: …
+
+## Relationships
+
+> The sentences that say how the terms connect. This is what stops an agent inventing a hierarchy
+> the code does not have.
+
+- A **\<Term\>** holds many **\<Term\>**
+- A **\<Term\>** has exactly one **\<Term\>** at a time
+
+## Ambiguities that were resolved
+
+> The most valuable section, and the one that decays if you skip it. When one word was being used for
+> two things, write which meaning won and which is now retired — otherwise the retired one comes back
+> in six months wearing the same spelling.
+
+- "\<word\>" meant both \<A\> and \<B\>. **Resolved:** \<A\> is now **\<Term\>**; \<B\> is
+  **\<Term\>**; the bare word is no longer used.
+
+## Words that are NOT domain terms
+
+> Frequently-used words that carry no special meaning here, listed so nobody looks for one.
+
+- \<word\>, \<word\> — ordinary English, no project meaning.
