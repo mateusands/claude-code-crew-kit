@@ -53,6 +53,10 @@ fi
 
 mkdir -p "$DEST"
 cp -r "$SOURCE_DIR/skills" "$SOURCE_DIR/agents" "$SOURCE_DIR/commands" "$SOURCE_DIR/workflows" "$DEST/"
+# The only gate in this kit that exits 1. Everything else is prose an agent chooses to
+# follow, and a description of the repository that quietly stopped being true is the one
+# defect no amount of reading catches.
+cp -r "$SOURCE_DIR/scripts" "$DEST/scripts"
 cp "$SOURCE_DIR/settings.json" "$SOURCE_DIR/crew-info.md.template" "$DEST/"
 
 # Root files: never clobber one the project already has.
@@ -139,6 +143,11 @@ echo "  # then RESTART your agent: .mcp.json is read at startup"
 echo
 echo "Trim it to the servers whose CLI you actually have installed and signed in — a server"
 echo "entry is not a working executor, and a roster that names one is worse than an empty one."
+echo
+echo "One gate here exits 1 rather than asking you to be careful — run it whenever the kit"
+echo "and the repository might have drifted apart:"
+echo
+echo "  node .claude/scripts/check-drift.mjs; echo \"exit=\$?\""
 echo
 echo "Next: SECURITY.md.template is not installed by default — copy it yourself if this repo is public."
 echo "Then, in the project, tell the agent:  \"Read START.md and follow it.\""

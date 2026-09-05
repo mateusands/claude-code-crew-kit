@@ -32,6 +32,7 @@ the CONTENT of the diff, not by your judgment**.
 | route, handler, middleware, serialization | `backend` skill |
 | screen, component, state, theme | `frontend` + `design-review` skills |
 | anything that can only be proven by running it | `local-testing` skill |
+| a moved file, a change to what is versioned, or an edited skill | `node .claude/scripts/check-drift.mjs; echo "exit=$?"` — the one gate here that exits 1 |
 
 Rules:
 

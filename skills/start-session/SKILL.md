@@ -81,6 +81,21 @@ scaffolding.
 > git clone, **confirm it is up to date before reading**: stale context makes you absorb the wrong
 > thing without noticing.
 
+## 1.5 — does the kit still describe this repository?
+
+```bash
+node .claude/scripts/check-drift.mjs; echo "exit=$?"
+```
+
+One command, and it is the only gate here that can fail. It catches the class of defect this skill
+cannot: the sentence in a skill that was true when it was written. A skill claiming a file is
+gitignored after it started being versioned, a link to a file that moved, a placeholder nobody
+filled, a script shipped beside a skill the skill never mentions — none of those break anything, so
+nothing reports them, and they get believed precisely because a skill is where facts are trusted.
+
+**`exit=1` is not a reason to stop working.** It is a reason to fix the document before you act on
+it, and to say in the report that you did.
+
 ## 2. Read only what the task requires
 
 Do not load the whole repository. The efficient path is always the same:

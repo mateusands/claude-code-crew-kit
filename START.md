@@ -259,9 +259,19 @@ that delegated writes never include git: commit, push and merge stay with the or
 ## Step 7 — verify, then report
 
 ```bash
-grep -rn "{{" .claude/ CLAUDE.md    # must return nothing, or only documented open questions
-ls .crew/                             # techstack.md, operations.md, plans-local/, hardenings/
+node .claude/scripts/check-drift.mjs; echo "exit=$?"    # must be exit=0
+ls .crew/                                               # techstack.md, operations.md, plans-local/, hardenings/
 ```
+
+🔴 **`check-drift` is the only thing in this kit that fails.** Everything else you have just written
+is prose that the next agent reads and decides to follow. This one exits 1 on a link that resolves
+nowhere, a placeholder you missed, a path you called gitignored that git actually tracks, and a script
+shipped inside a skill that the skill never mentions.
+
+It is the answer to the failure mode this whole step exists to prevent: **a specialization that was
+true the day it was written.** Wrong documentation about infrastructure ages worse than wrong code,
+because nobody ever runs it. Run it now, run it at the start of a session, and run it before you
+claim the kit is in good shape.
 
 Report to the human, in this order:
 
