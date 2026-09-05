@@ -40,10 +40,12 @@ report which skills you ran.
 | touch a table, column, index or migration | `schema` |
 | touch personal data, a new dependency, or an external service | `compliance` — **before** writing, not after |
 | touch a write path that changes state | `audit-trail` |
+| find out why something is broken, slow or flaky | `diagnosing-bugs` — **before any theory** |
 | say a change is done | `local-testing` |
 | review a diff | `codereview` |
 | review UI work | `design-review` (with `codereview`) |
 | audit the whole repository for security | `complete-security-review` |
+| write or edit a skill, a workflow, `AGENTS.md` or a prompt | `writing-for-agents` |
 | end a session | `end-session` |
 
 **The two that are hardest to remember and cost the most when skipped:**

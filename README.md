@@ -78,10 +78,10 @@ update" changes an outcome.
 ├── agents/                     # 5 subagents
 ├── commands/                   # 4 commands that stitch the skills together
 ├── workflows/                  # role policy + multi-agent orchestration
-└── skills/                     # 18 skills
+└── skills/                     # 20 skills
 ```
 
-### The 18 skills
+### The 20 skills
 
 | Skill | Role |
 |---|---|
@@ -90,6 +90,7 @@ update" changes an outcome.
 | `plan-review` | the OTHER agent reviews that plan before any code exists |
 | `coder` | the discipline of the act of writing (between plan and review) |
 | `codereview` | senior review of the diff, with triage, severity and a verdict |
+| `diagnosing-bugs` | why is it broken — a loop that goes red before any theory exists |
 | `complete-security-review` | full-repository security audit, with coverage stated as numbers |
 | `design-review` | visual craft — what `codereview` does not look at |
 | `local-testing` | prove it at runtime (L1→L5), not in a green suite — and L5 asks whether the artifact is even deployed |
@@ -103,6 +104,7 @@ update" changes an outcome.
 | `audit-trail` | no action without a trace |
 | `end-session` | permanent hardening report + update the source of truth |
 | `onboard-agent` | add a new CLI agent to the crew, after it passes the containment battery |
+| `writing-for-agents` | how to write a document an agent runs — context load, disclosure, criteria, leading words |
 
 ### The 5 subagents
 
@@ -349,6 +351,15 @@ models on small context windows: the re-read discipline in `AGENTS.md` (open the
 time, never run it from memory), the per-skill **Can / Must / Cannot** contract, the deviation
 lifecycle `OPEN → ADDRESSED → INCORPORATED`, and the rule that whoever decides writes the record
 while review only flags its absence. The ideas are his; the wording here is ours.
+
+Four more came from [mattpocock/skills](https://github.com/mattpocock/skills) by
+[@mattpocock](https://github.com/mattpocock), MIT: the diagnosis discipline behind `diagnosing-bugs`
+(a loop that goes red before any hypothesis, and three to five ranked falsifiable hypotheses rather
+than one), the authoring theory behind `writing-for-agents` (the two loads, the disclosure ladder,
+completion criteria, leading words, and negation as a failure mode), the user-invoked vs
+model-invoked axis now declared in the frontmatter of the skills only a human starts, and
+`.crew/language.md`, which is his `CONTEXT.md` fitted to this kit's records directory. The ideas and
+the structure are his; the text and the measurements in it are ours.
 
 ## License
 

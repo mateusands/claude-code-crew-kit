@@ -1,0 +1,146 @@
+---
+name: writing-for-agents
+description: How to write a document an agent will run — a skill, an AGENTS.md, a workflow, a prompt. Covers what earns permanent context, where material sits between inline and disclosed, how a step's completion criterion drives thoroughness, and why a prohibition activates what it forbids. Use when creating or editing any of them.
+---
+
+# Writing for agents — the document is a process, not a text
+
+- **Can:** restructure, split, prune and rename any document in this kit.
+- **Must:** state which of the two loads each addition spends, and keep one meaning in one place.
+- **Cannot:** add a rule without a reason attached, or leave a prohibition standing without the
+  positive behaviour beside it.
+
+A document for a human is judged by what the reader understands. A document for an agent is judged by
+**what the agent does on a run it has not had yet**. Those come apart: a paragraph that reads well and
+changes no behaviour is a cost with no return, and it is the most common thing in a bad skill file.
+
+## The two budgets, and which one each addition spends
+
+| | What it costs | Who pays |
+|---|---|---|
+| **Context** | tokens and attention on **every turn**, whether or not the material fires | the agent |
+| **Attention of the human** | remembering that the document exists and when to reach for it | you |
+
+A skill's `description`, a line in `AGENTS.md`, anything always loaded: context. Material behind a
+pointer costs only the pointer's own line. Material with no pointer at all costs nothing in context
+and everything in memory — the human is the index.
+
+🔴 **Neither budget is to be minimised.** Human attention is the price of human agency: spend it where
+judgment matters, and take it back where it does not.
+
+### Invocation is the lever on the first budget
+
+In Claude Code, two frontmatter fields decide who can reach a skill, and the second column is the one
+people miss:
+
+| Frontmatter | Human | Agent | Description in context |
+|---|---|---|---|
+| *(default)* | yes | yes | **always** |
+| `disable-model-invocation: true` | yes | no | **never** |
+| `user-invocable: false` | no | yes | always |
+
+**Give a skill a description only if the agent must reach it on its own, or another skill must.** A
+skill that only ever fires because a human typed it pays permanent context for discoverability nobody
+uses. Anything with side effects the human times — starting or ending a session, onboarding, a deploy
+— belongs in the second row.
+
+⚠️ **A user-invoked skill cannot be reached by another skill either.** Shared material two of them
+need lives in neither: put it in a plain file both point at.
+
+## Where each piece sits
+
+Three rungs, ordered by how immediately the agent needs the material:
+
+1. **A step in the file** — what the agent does, in order. The primary tier.
+2. **Reference in the file** — consulted on demand. Often a flat list of peers, which is a legitimate
+   shape, not a smell.
+3. **Reference behind a pointer** — a separate file, loaded only when the pointer fires.
+
+**The branching test decides the rung:** inline what every run needs, disclose what only some runs
+reach. Push too little down and the top bloats; push too much and the agent never sees what it needed.
+
+🔴 **A document with steps buries them under long in-file reference.** When the steps are the point,
+reference that could be disclosed does not merely lengthen the file — it turns following the steps
+into a coin flip.
+
+**Sprawl** is the failure even when every line is live and unique: attention thins across the excess.
+Measured here — a review skill grew past 390 lines, and the effect showed up as a delegated reviewer
+that spent its budget reading the procedure and arrived at the diff with nothing left. The reply came
+back; it was just about nothing.
+
+**Keep a concept whole where it sits.** Definition, rule and caveat under one heading, so reading one
+brings the others. Scattering one meaning across a file is a different defect from repeating it in
+two places, and it is harder to see.
+
+## Steps end on a criterion
+
+Every step needs the condition that says it is done, and two properties make that condition a lever:
+
+**Can the agent tell done from not-done?** A soft bound — "once you understand the module" — invites
+stopping early, with attention already on the steps ahead. Sharpen the bound first; it is cheap and
+local. Only if it is irreducibly fuzzy *and* you see the rush, split the sequence so the later steps
+are not in view.
+
+**How much does it demand?** "Every handler accounted for, with the number" forces work that "review
+the routes" does not. The demand is what produces the digging, and it binds a flat list of rules as
+well as a sequence: *every rule applied* is an exhaustiveness bar on reference.
+
+**The strongest criteria are checkable and exhaustive.** This kit's version of that is a command with
+an exit status: `<command>; echo "exit=$?"`. Where one exists, it beats any sentence.
+
+## One word instead of a paragraph
+
+A word the model already knows anchors a whole region of behaviour at the cost of one token, because
+it recruits what the model brings rather than what you wrote. *Tight* carries fast-deterministic-
+specific. *Red* turns "a loop you believe in" into a binary you can observe. **Repeat the word, never
+the definition** — the meaning accumulates across its uses.
+
+Invent one only when nothing existing fits: a coined word recruits nothing, so you pay in definition
+tokens what a known word gives free.
+
+Go hunting for these. A triad spelled out at three sites, a sentence gesturing at an idea that has a
+name — each is a passage waiting to collapse into a token, and you win twice: fewer tokens, and a
+sharper hook.
+
+## 🔴 A prohibition activates what it forbids
+
+Steering by ban drags the banned thing into context and makes it *more* available. *Do not think of an
+elephant.* The negation is a weak modifier over a strongly activated concept, and it half-reads as an
+instruction.
+
+**Write the target behaviour.** "Comments explain why" rather than "do not describe what the code
+does". The banned thing then never gets named at all.
+
+A prohibition earns its place as a hard guardrail you cannot phrase positively — *never force-push a
+published commit* — and even there it wants the positive beside it: *branch, and open a pull request.*
+This kit's `Cannot:` contracts are the guardrail case. Everything else in a skill should be a target.
+
+## Pruning is the maintenance
+
+- **One meaning, one place.** The same rule in two files costs tokens, costs maintenance, and
+  overstates its own rank. (The opposite of a leading word, which repeats the *token* deliberately and
+  never the meaning.)
+- **The environment is a source of truth, and a document that restates it is a cache.** A test count,
+  a version, a branch state, the scripts in a manifest: a command re-derives each in seconds, and the
+  copy in the document goes wrong silently. **Cache only what cannot be looked up** — the unwritten
+  convention, the reason behind a choice, the trap no config confesses.
+- **Hunt the no-ops.** An instruction the model already follows by default spends context to say
+  nothing. The test is not whether a human finds it sensible; it is whether behaviour changes without
+  it. Two people disagreeing about a no-op are disagreeing about the default, and the way to settle it
+  is to run the document. When a sentence fails the test, delete the sentence — not a few words of it.
+- **Check every line for whether it still bears on the task.** Lines go stale as the world they
+  describe changes, and the default fate of a document nobody prunes is sediment: layers that settled
+  because adding felt safe and removing felt risky.
+
+## The check that fails
+
+`node .claude/scripts/check-drift.mjs; echo "exit=$?"` — a link that resolves nowhere, a placeholder
+nobody filled, a path called gitignored that git tracks, a script beside a skill the skill never
+names. Everything above is judgment; this is the part that can be wrong in a way a machine sees.
+
+---
+
+*The structure of this skill — the two loads, the disclosure ladder, completion criteria, leading
+words, negation — comes from Matt Pocock's `writing-for-agents`
+([mattpocock/skills](https://github.com/mattpocock/skills), MIT). The text is ours, and so are the
+measurements in it.*
