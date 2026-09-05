@@ -1,7 +1,12 @@
 ---
 name: onboard-agent
-description: Onboard a new CLI coding agent (Kimi, DeepSeek, Qwen, Cursor, Amp, any future one) into the crew as an MCP server — probe what its CLI can do, run the containment test battery that proves it cannot touch git, wire it with the audited wrapper, and register it in the role policy. Use when someone wants to add another agent to the crew. Never register an agent that has not passed the battery.
+description: Onboard a new CLI coding agent into the crew as an audited MCP server, after a containment battery it must pass first.
+disable-model-invocation: true
 ---
+
+<!-- User-invoked: registering an agent is the human's decision and its timing is theirs, so this
+     skill pays no permanent context for a reach nobody uses. The description above is written for
+     the human who types it, not for a model deciding whether to fire it. -->
 
 # Onboarding a new agent into the crew
 

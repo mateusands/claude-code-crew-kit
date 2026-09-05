@@ -1,7 +1,13 @@
 ---
 name: plan
-description: Planning a fix/feature BEFORE writing code — the mirror skill of codereview, only at the start. Restates the goal with acceptance criteria, asks only the blocking questions (each with a default), declares falsifiable assumptions, maps the blast radius, decides the SHAPE of the change, runs the gates, writes the test plan and the rollback point — and then STOPS. Use on receiving "I want to fix X" / "I want feature Y".
+description: Plan a fix or feature before any code — acceptance criteria, blocking questions, falsifiable assumptions, blast radius, test plan, rollback point. Then stop.
+disable-model-invocation: true
 ---
+
+<!-- User-invoked, and in Claude Code it could not be otherwise: the name collides with the built-in
+     /plan, so a Skill(plan) call comes back telling you to ask the human. Declaring it here makes
+     the constraint visible in the file instead of discoverable by hitting it mid-task, and takes the
+     description out of permanent context. Open this file and follow it. -->
 
 # Plan — before the first line of code
 
