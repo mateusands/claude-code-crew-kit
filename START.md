@@ -186,6 +186,25 @@ So, when you rename or translate:
 
 Same rule for a skill you split or merge. **One procedure, one file, one name.**
 
+### 4c-ter. Read one that is already finished
+
+Everything above describes a specialized kit; none of it shows you one. A public example worth the
+twenty minutes is [ai-memory's `AGENTS.md`](https://github.com/akitaonrails/ai-memory/blob/main/AGENTS.md) —
+a 500-line specialized instruction file for a large Rust codebase. Take the shapes, not the content:
+
+- **Invariants that each name the bug that produced them**, with the issue document beside them. Our
+  "Traps already paid for" is the same section with weaker sourcing.
+- **An invariant that names the shape of test which cannot see its defect** — *"unit tests exercise
+  one session at a time, which is the exact shape that cannot see a concurrency defect"* — and then
+  requires any change in that area to be **argued against the invariant explicitly rather than
+  assumed safe**. That is a purpose gate applied to a whole subsystem.
+- **Two test tiers with a rule for which to run when**, plus a per-test time budget and the specific
+  fixes to try before moving a slow test to the slow tier.
+- **Platform notes carrying measurements**: a build cache seen at 157 GiB, a macOS environment
+  variable worth 75s to 41s. Numbers, not adjectives.
+- **A routing rule by diff content**: add the `windows` label to a PR touching path handling, file
+  locking or git plumbing, so the slow platform job runs before the merge instead of after.
+
 ### 4d. Do not invent
 
 If you did not verify it in the code, do not write it as fact. A specialized skill full of plausible
@@ -222,6 +241,11 @@ fork whose gates would otherwise send you to ask a stranger, and for the clone w
 upstream while the decisions about this copy are yours. 🔴 **An override is stated in every report it
 affects** — *"the project names X · this copy runs under Y"* — because redirecting "ask the owner" to
 yourself without saying so removes the gate and leaves its name in the report.
+
+🔴 **The memory you are creating will be read as history, never as authority.** `hardenings/` and the
+fact files record what was decided and observed; `info.md` and `.crew-kit-config` are what grant
+anything. Write them that way — a hardening that reads like a standing permission will be followed as
+one by a session that has no way to check it.
 
 🔴 **Ask the human which mode applies, and check the roster before believing the answer.** Mode is the
 smaller of what the project allows and what this machine reaches — a project that permits `crew` runs
