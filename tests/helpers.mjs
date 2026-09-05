@@ -23,7 +23,11 @@ export function makeRepo(files) {
     writeFileSync(join(dir, name), body);
   }
   git("add", "-A");
-  git("commit", "-q", "-m", "baseline");
+  // --no-gpg-sign, because a contributor with `commit.gpgsign = true` set globally
+  // otherwise has git try to sign as this fixture's fake identity, find no secret key,
+  // and exit 128. Every test that builds a repo then fails on their machine and nowhere
+  // else: a CI runner has no global gitconfig, so nothing upstream can catch it.
+  git("commit", "-q", "--no-gpg-sign", "-m", "baseline");
   return { dir, git, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 

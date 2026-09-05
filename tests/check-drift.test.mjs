@@ -46,7 +46,7 @@ function installedProject(t, { specialize = true } = {}) {
     }
   }
   git("add", "-A");
-  git("commit", "-q", "-m", "install");
+  git("commit", "-q", "--no-gpg-sign", "-m", "install");
   return dir;
 }
 
