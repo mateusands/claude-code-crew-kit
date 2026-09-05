@@ -1,0 +1,11 @@
+# ai-memory scope for this checkout.
+#
+# Without this file the hooks bucket by basename(cwd) under the "default"
+# workspace, so a `cd` into a sibling directory splits one session's record
+# across projects — measured here as observations landing in "Repositorios"
+# and "mateuswzt" alongside the real ones.
+#
+# Declaring both names also gives a static MCP client the pair it must pass on
+# every project-scoped call, instead of guessing from the directory name.
+workspace = "mateuswzt"
+project = "crewwatch"

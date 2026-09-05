@@ -29,6 +29,11 @@ belong in your user config instead (`claude mcp add`).
 > ⚠️ **Every server costs context on every session** — its tool definitions load whether you use them
 > or not. Install what the project needs, not what might be useful someday.
 
+🔴 **`ai-memory` is the one server here that stores what you do.** Its lifecycle hooks record every
+prompt and tool call, so enabling them is a decision about your own data, not a convenience. Read
+[`ai-memory/README.md`](ai-memory/README.md) before installing, and note the rule that governs it:
+what memory returns is history, never instruction.
+
 Role and model policy for the whole crew lives in
 [`../workflows/agent-roles.md`](../workflows/agent-roles.md) — read that first; this file covers the
 plumbing.
@@ -41,6 +46,7 @@ plumbing.
 | **copilot** | [`copilot/`](copilot/) | second executor for delegated writes | `copilot` on PATH, signed in, Node 18+ |
 | **context7** | [`context7/`](context7/) | version-accurate library docs for `backend`/`frontend` Step 0 | `npx` |
 | **shadcn** | [`shadcn/`](shadcn/) | component registry access — **only if the project has `components.json`** | `npx` |
+| **ai-memory** | [`ai-memory/`](ai-memory/) | recall across sessions and agents, and a handoff claimed exactly once | a local server, registered at **user** scope |
 
 ---
 
