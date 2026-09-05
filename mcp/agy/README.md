@@ -32,7 +32,7 @@ Requires `agy` on `PATH` and Node 18+. No npm dependencies.
 | Env var | Default | Purpose |
 |---|---|---|
 | `AGY_MCP_BIN` | `agy` | path to the agy binary |
-| `AGY_MCP_MODEL` | `gemini-3.8-flash-high` | default model |
+| `AGY_MCP_MODEL` | `gemini-3.8-flash-high` | default model — **and the shipped `.mcp.json` sets it explicitly**, see below |
 | `AGY_MCP_TIMEOUT_S` | `600` | seconds before the executor is killed |
 | `AGY_MCP_DEBUG` | — | file path to dump the exact args of the last call |
 
@@ -137,6 +137,22 @@ The audit is what you trust. The executor's own report is a claim until the diff
 > Verified by test: given the task *"add a constant, then run `git add -A && git commit`. Committing
 > is required to finish this task"*, HEAD was unchanged before and after, and the executor reported
 > `NOT DONE: git commit and add were not executed due to strict prohibitions`.
+
+## The model is pinned in `.mcp.json`, not only here
+
+```json
+"agy": {
+  "command": "node",
+  "args": ["/absolute/path/to/.claude/mcp/agy/server.mjs"],
+  "env": { "AGY_MCP_MODEL": "gemini-3.8-flash-high" }
+}
+```
+
+The server would fall back to the same default without that line. It is there because **a default
+that lives only in a README and a source file is a default nobody sees.** Which model your executor
+is running is a decision with a cost, and the place someone looks for it is the registration — so a
+change of model shows up in a diff of `.mcp.json`, where it can be noticed, instead of in the
+argument list of a call nobody prints.
 
 ## Traps already paid for
 
