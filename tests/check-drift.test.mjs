@@ -101,3 +101,15 @@ test("a sentence naming both the ignored file and its committed example stays qu
   const r = run(dir);
   assert.equal(r.status, 0, `a correct sentence must not be flagged — noise is how a check gets turned off:\n${r.stdout}`);
 });
+
+test("a true sentence about a file that is not there stays quiet", (t) => {
+  const dir = installedProject(t);
+  // Both shapes came back as false positives while this check was being tuned, and a
+  // false positive on a correct sentence is worse than a missed one: it is the reason
+  // someone stops running the check at all.
+  appendFileSync(join(dir, "AGENTS.md"),
+    "\nThere is no `.env` in this project; nothing like it is ever committed.\n" +
+    "`.crew-kit-config` is gitignored — copy `.crew-kit-config.example` and fill it in.\n");
+  const r = run(dir);
+  assert.equal(r.status, 0, `nothing here contradicts git:\n${r.stdout}`);
+});

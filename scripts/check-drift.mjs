@@ -115,11 +115,17 @@ if (gitWorks) {
         .filter((c) => /^[\w./-]+$/.test(c) && (c.includes(".") || c.includes("/")));
       if (/this file|these files/i.test(line)) candidates.push(relative(ROOT, file));
       if (!candidates.length) continue;
-      const anyIgnored = candidates.some((c) => {
-        try { execFileSync("git", ["check-ignore", "-q", "--", c], { cwd: ROOT, stdio: "pipe" }); return true; }
+      // The claim is contradicted only when git TRACKS every path the sentence names.
+      // A path git ignores satisfies it. So does one that does not exist — "there is no
+      // `.env` in this project" and "`.crew-kit-config` is gitignored, copy the example"
+      // are both true sentences about a file that is not there, and flagging either of
+      // them is noise. Noise is how a check gets switched off, so the check has to be
+      // quiet whenever it is right.
+      const allTracked = candidates.every((c) => {
+        try { execFileSync("git", ["ls-files", "--error-unmatch", "--", c], { cwd: ROOT, stdio: "pipe" }); return true; }
         catch { return false; }
       });
-      if (!anyIgnored) {
+      if (allTracked) {
         flag("gitignore-claim", `${relative(ROOT, file)}:${i + 1}`,
              `says ${candidates.map((c) => "`" + c + "`").join(" / ")} is out of the repository, but git tracks it`);
       }
