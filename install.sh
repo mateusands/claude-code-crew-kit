@@ -101,6 +101,17 @@ fi
 # question: where this came from, and under what terms.
 cp "$SOURCE_DIR/LICENSE" "$DEST/LICENSE-crewwatch"
 
+# A server that is copied but never registered does not exist. The kit shipped the
+# servers under .claude/mcp/ and left a .mcp.json whose paths read
+# `/absolute/path/to/...`, so registering meant hand-editing three of them — and when
+# the step was skipped the tools were simply absent, with no error that pointed at the
+# cause. The example is now written with this project's real paths already in it.
+#
+# It is an EXAMPLE and not `.mcp.json` on purpose: that file is shared project
+# configuration, it decides which servers everyone who opens the repo is asked to
+# approve, and that is not the installer's call to make.
+sed "s|/absolute/path/to/.claude|$DEST|g" "$SOURCE_DIR/mcp/.mcp.json" > "$TARGET_ROOT/.mcp.json.example"
+
 VERSION="$(git -C "$SOURCE_DIR" describe --tags --always 2>/dev/null || echo unknown)"
 COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 SOURCE_URL="$(git -C "$SOURCE_DIR" remote get-url origin 2>/dev/null || echo "$SOURCE_DIR")"
@@ -120,8 +131,14 @@ echo "project — keep it if you publish a repository that contains these files.
 echo
 echo "Copy .crew-kit-config.example to .crew-kit-config and fill in your roster — it is gitignored."
 echo
-echo "The MCP servers are at .claude/mcp/. Copy the .mcp.json you want to the project root and"
-echo "point it at .claude/mcp/<server>/server.mjs — that is where the servers actually live."
+echo "The MCP servers are at .claude/mcp/, and they are NOT registered yet — until you register"
+echo "them they do not exist as tools, and nothing will tell you why they are missing."
+echo
+echo "  cp .mcp.json.example .mcp.json     # already points at $DEST/mcp/"
+echo "  # then RESTART your agent: .mcp.json is read at startup"
+echo
+echo "Trim it to the servers whose CLI you actually have installed and signed in — a server"
+echo "entry is not a working executor, and a roster that names one is worse than an empty one."
 echo
 echo "Next: SECURITY.md.template is not installed by default — copy it yourself if this repo is public."
 echo "Then, in the project, tell the agent:  \"Read START.md and follow it.\""

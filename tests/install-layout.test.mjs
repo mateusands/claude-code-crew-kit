@@ -81,3 +81,26 @@ test("the licence travels with the copy it covers", (t) => {
   // The operative terms are the ones that must not drift.
   assert.equal(text.split("Permission is hereby granted")[1], readFileSync(join(REPO_ROOT, "LICENSE"), "utf8").split("Permission is hereby granted")[1]);
 });
+
+test("the installed .mcp.json example points at servers that are actually there", (t) => {
+  // A server copied but never registered does not exist, and the shipped example used
+  // to carry `/absolute/path/to/...` — three hand-edits between the install and a
+  // working tool, with silence as the failure mode when they were skipped.
+  const target = mkdtempSync(join(tmpdir(), "crew-install-"));
+  t.after(() => rmSync(target, { recursive: true, force: true }));
+  execFileSync(join(REPO_ROOT, "install.sh"), [target], { stdio: "pipe" });
+
+  const example = join(target, ".mcp.json.example");
+  assert.ok(existsSync(example), "install.sh must write a ready-to-copy .mcp.json.example");
+  const cfg = JSON.parse(readFileSync(example, "utf8"));
+
+  assert.ok(!readFileSync(example, "utf8").includes("/absolute/path/to"), "no placeholder path may survive the install");
+  for (const [name, srv] of Object.entries(cfg.mcpServers)) {
+    for (const arg of srv.args) {
+      if (!arg.endsWith("server.mjs")) continue;
+      assert.ok(existsSync(arg), `${name} points at ${arg}, which does not exist`);
+    }
+  }
+  // The one the field report caught: shipped in the tree, absent from every registration.
+  assert.ok(cfg.mcpServers.agy, "agy ships with the kit and must appear in the example");
+});
