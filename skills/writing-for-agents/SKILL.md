@@ -115,6 +115,41 @@ A prohibition earns its place as a hard guardrail you cannot phrase positively �
 published commit* — and even there it wants the positive beside it: *branch, and open a pull request.*
 This kit's `Cannot:` contracts are the guardrail case. Everything else in a skill should be a target.
 
+## Three tiers, so a rule says how it fails
+
+A document full of rules at one volume is a document where nothing is absolute. Give every rule one
+of three tiers, and say which:
+
+| Tier | What it means | Fails when |
+|---|---|---|
+| **Hard gate** | absolute, no exception | it is broken at all |
+| **Purpose gate** | the thing is allowed; **the unwritten reason is what fails** | it appears as a default, or the reason is not written down |
+| **Consistency lock** | the same choice, applied throughout | one place diverges without saying so |
+
+🔴 **The middle tier is the one worth having, and it is the one most rulesets skip.** It is the
+constructive form of the section above: instead of *never use a fallback*, write *a fallback is
+allowed, and its reason is written down where the next reader will find it.* The technique stops
+being forbidden and the absence of thought starts being what fails — which is what you actually
+wanted to catch.
+
+Most of this kit's prohibitions are purpose gates wearing a ban's clothes. *A fact a command
+re-derives does not belong in a skill* is really: **put it there if you write down why the command
+cannot.** *Never simplify a guard that came from an incident* is really: **simplify it once you have
+written what it was guarding.**
+
+The per-skill **Can / Must / Cannot** contract is already this shape: `Cannot` is the hard gate,
+`Must` is the consistency lock. What it has never carried is the middle tier, which is where most of
+the judgment lives.
+
+### The keystone: one line, or the decision is not made
+
+**Every non-obvious decision gets a one-line reason, written where the decision lives** — the commit,
+the plan's deviation row, the comment above the guard, the hardening.
+
+🔴 **If the reason will not fit in one line, the decision has not been made yet.** That is the whole
+test, and it is what makes every purpose gate above checkable: the gate is not "is this technique
+acceptable", which nobody can answer, but "is the reason written", which anybody can.
+
 ## Pruning is the maintenance
 
 - **One meaning, one place.** The same rule in two files costs tokens, costs maintenance, and
