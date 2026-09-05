@@ -367,6 +367,16 @@ model-invoked axis now declared in the frontmatter of the skills only a human st
 `.crew/language.md`, which is his `CONTEXT.md` fitted to this kit's records directory. The ideas and
 the structure are his; the text and the measurements in it are ours.
 
+Three more came from [anti-slop](https://github.com/miqdadbadjuber/anti-slop) by
+[@miqdadbadjuber](https://github.com/miqdadbadjuber), MIT: the three rule tiers with the purpose gate
+in the middle (the technique is allowed, the unwritten reason is what fails) and its keystone (a
+one-line reason, or the decision is not made yet); the anti-AI-writing patterns now in
+`writing-for-agents`, with the counterpart that matters more than the list — look for clusters, and
+preserve what makes writing human; and the selftest, whose direction of proof is his contrast
+checker's: the script reads the table out of the document and recomputes it, rather than carrying its
+own copy. The 38 UI and copy rules that are the rest of that repository are deliberately not here;
+they are a design filter, and this is a process kit.
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).

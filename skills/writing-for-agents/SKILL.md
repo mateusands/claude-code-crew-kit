@@ -150,6 +150,47 @@ the plan's deviation row, the comment above the guard, the hardening.
 test, and it is what makes every purpose gate above checkable: the gate is not "is this technique
 acceptable", which nobody can answer, but "is the reason written", which anybody can.
 
+## How the kit's own output should read
+
+The deliverables here are text: a report, a pull request body, a hardening, a review verdict. So the
+writing is not presentation on top of the work — for a reviewer reading it, **it is the work**.
+
+The patterns below are not style preferences. Each one is a way a report says less than it appears
+to, and they cluster in machine-written text because they are what a model reaches for when it has
+nothing specific to say:
+
+| The tell | What it costs a report |
+|---|---|
+| **Empty vocabulary** — *leverage, robust, seamless, streamline, comprehensive* | words that signal effort instead of naming a result |
+| **Significance inflation** — *a major step, a pivotal change* | ceremony where a measurement belongs |
+| **Attribution with no source** — *it is generally understood, best practice suggests* | authority borrowed for a claim nobody made |
+| **Actorless passive** — *the decision was taken, the file was updated* | the actor was available and got deleted, and so did the accountability |
+| **An abstraction given a human verb** — *the audit knows, the data tells us* | sounds active, names nobody, passes a passive-voice check |
+| **A forced group of three** | a rhythm the content did not ask for; real lists are as long as they are |
+| **A run of short fragments** — *No guessing. No waiting. No surprises.* | manufactured emphasis where earned emphasis was possible |
+| **A generic positive close** — *this puts us in a strong position* | padding the ending with mood instead of the last concrete fact |
+| **Stacked hedging** — *could potentially perhaps* | one qualifier does the work; three read as evasion |
+| **Filler** — *in order to, it is important to note that* | length that adds nothing, which the reader pays for |
+
+The three that matter most here are the ones that **fake evidence**: the unsourced attribution, the
+invented specific, and the upbeat conclusion. A report exists to carry proof, and each of those is
+proof-shaped and empty. `/honesty` is the pass that catches them.
+
+⚠️ **Look for clusters, not single tells, and do not gut good writing to hit a list.** These are not
+reliable on their own, and over-editing produces exactly the flat, careful prose the list exists to
+prevent:
+
+- one *however*, one em dash, one short emphatic sentence: nothing;
+- precise or formal vocabulary is not the same as empty vocabulary — do not flatten an exact word;
+- **passive is right** when the actor is genuinely unknown or irrelevant (*the process was killed at
+  the ceiling*);
+- **preserve what makes writing human**: the specific unfabricable detail, varying sentence length,
+  a real aside, an unresolved tension. A report that admits *I do not know why the suite exited 254*
+  is worth more than one that reads cleanly.
+
+The pull request rules live in this project's PR template (`.github/pull_request_template.md`) and
+are not repeated here.
+
 ## Pruning is the maintenance
 
 - **One meaning, one place.** The same rule in two files costs tokens, costs maintenance, and
