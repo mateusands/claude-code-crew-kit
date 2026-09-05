@@ -241,6 +241,8 @@ RULES:
 - Do not delegate this to any other tool or agent. Answer it yourself.
 - Read only the diff and the files it touches.
 - 400 words maximum.
+- Write your answer to <path/to/review.md> AS YOU GO — the header first, then each finding
+  the moment you confirm it. Do not hold it until the end.
 
 END WITH EXACTLY:
 VERDICT: BLOCK | PROCEED WITH CAVEAT | CLEAR
@@ -262,6 +264,13 @@ call answered and exited 0.
 That it is a race is what makes it expensive. Sometimes the pipe closes on its own and the call runs,
 so the hang looks intermittent and gets blamed on the reviewer, on the diff, on anything but the
 invocation. Closing the input removes the whole class.
+
+🔴 **The file is what survives a ceiling.** A review is the longest call the crew makes and the one
+most likely to be killed at its timeout, and a reviewer killed at the ceiling loses everything it was
+still holding in its reply. Written as it goes, a cut-off costs the tail of the analysis instead of
+all of it. Delegating through a handle? Give the reviewer that file as its `owned_files`, so the
+audit covers it. **A timed-out job is not an empty one** — read the file before deciding the round
+is lost.
 
 Each rule is there because its absence broke a review:
 

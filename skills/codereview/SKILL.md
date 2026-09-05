@@ -15,6 +15,16 @@ Act as a Senior Software Engineer and Solutions Architect. Critical, in-depth re
 > This skill does not compete with the reviewers your environment already ships — it is the checklist
 > that only exists because **this** repository exists. Run this skill **and** your own. See below.
 
+🔴 **Delegating this review? Tell the reviewer to write its report to a file AS IT GOES.** Not at the
+end — as it goes: the header first, then each finding the moment it is confirmed. A review is the
+longest call the crew makes and the likeliest to hit its ceiling, and a reviewer killed at the
+ceiling loses everything it was still holding in its reply. With the file, a cut-off costs the tail
+of the analysis instead of all of it, and the round can be resumed instead of repeated.
+
+Own that file in the delegated call (`owned_files: ["<the report>"]`), so the audit covers it and the
+partial work is attributable. **A timed-out job is not an empty one** — read the file and the diff
+before deciding the round is lost.
+
 ## Step −2 — 🔴 did you write this code?
 
 **Nobody reviews their own work.** An author re-reading their own diff re-reads their own reasoning
