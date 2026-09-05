@@ -369,6 +369,28 @@ Reviewing only the technique lets the expensive thing through: correct code solv
 
 ---
 
+## Verify each Critical and High before it reaches the list
+
+🔴 **A finding you did not try to refute is a hypothesis with a severity attached.** Before a
+Critical or a High is signed, one adversarial pass over it: open the file at the `file:line`, try to
+make the claim false, and come back with **CONFIRMED / REFUTED / UNCERTAIN** plus the concrete
+failure scenario.
+
+The kit ships a subagent for exactly this — [`finding-verifier`](../../agents/finding-verifier.md),
+whose whole job is to attack one finding and report which of the three it is.
+
+⚠️ **Some hosts do not let you call a subagent unless the human asked for one.** That is a real
+constraint and it does not exempt the step: **do the pass yourself, in a separate reading**, and say
+in the verdict which of the two happened. "Verified by a separate pass" and "verified while writing
+it" are different evidence, and only the first one catches the finding that felt obviously true.
+
+The two shapes this catches most often:
+
+- **A contract or a test that passed while asserting nothing** — the assertion ran against an empty
+  set and reported success. Ask what the assertion would have to see to fail.
+- **A finding whose `file:line` is close but not right.** The reader goes to the line, sees something
+  else, and stops trusting the whole list.
+
 ## Before reporting — precision beats coverage
 
 **A wrong finding costs more than a missing one.** The first burns trust in every other item on the

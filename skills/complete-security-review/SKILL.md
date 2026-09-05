@@ -52,6 +52,13 @@ git ls-files | sed 's/.*\.//' | sort | uniq -c | sort -rn | head   # languages
 Then find and **count** each class you are about to sweep — routes/handlers, forms, queries,
 file-upload paths, external calls. Use the project's own conventions (`{{LAYERS}}`) to locate them.
 
+🔴 **Sweeping a class means walking all of it, and that is what the
+[`surface-sweeper`](../../agents/surface-sweeper.md) subagent is for**: it traces one field from its
+origin to every screen, export and report that consumes it, which is how you find the second surface
+that will disagree with the first. If your host does not allow calling a subagent unasked, do the
+trace by hand and **state the number you walked** — the number is what separates a sweep from a
+sample.
+
 Write the map down. A sweep with no denominator cannot be completed honestly.
 
 Also read `{{RECORDS_DIR}}/info.md` and `{{SOURCE_OF_TRUTH}}`: `{{SENSITIVE_DATA}}`,
