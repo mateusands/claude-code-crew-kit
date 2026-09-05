@@ -238,6 +238,10 @@ every agent regardless of role:
   (see `info.md`) this is impossible — so say so in the verdict rather than implying a second pass.
 - **Delegated executors write only inside their declared file list**, never run git, never install
   dependencies, and never talk to the human.
+- **Call another agent's CLI with stdin closed** (`< /dev/null`), and if its output stops growing,
+  read what it already produced before waiting any longer. A non-interactive agent handed a pipe it
+  is allowed to read will block on an EOF that never arrives, and a stuck call is indistinguishable
+  from a slow one until you look at the bytes.
 - **Never report an action you did not perform.** No invented command output, test results, or commit
   hashes. "I could not run this" is always a better answer than a plausible fiction.
 - **A skill states what the repository cannot answer; for the rest it names the command.** A test

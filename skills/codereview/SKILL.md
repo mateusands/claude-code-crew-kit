@@ -56,7 +56,7 @@ Identify yourself and act accordingly:
 | If you are… | Run, in addition to this skill |
 |---|---|
 | **Claude Code** | the built-in `/code-review` for the diff, and 🔴 **`/security-review`** — always, on any diff that touches a route, handler, auth, input handling, a dependency, or infrastructure config. It is a separate pass with a separate threat model; this skill's security pillar does not replace it |
-| **Codex / ChatGPT** | `codex review` (its non-interactive review), or your review agent |
+| **Codex / ChatGPT** | `codex review < /dev/null` (its non-interactive review — close stdin, see [`agent-roles.md`](../../workflows/agent-roles.md#how-to-run-the-cross-review)), or your review agent |
 | **Gemini / Antigravity** | your own review command or review agent |
 | **Any other agent** | 🔴 **find your own review skill or command before starting**, and run it. Do not assume you do not have one — look. If you genuinely have none, say so explicitly in the verdict rather than staying quiet about it |
 

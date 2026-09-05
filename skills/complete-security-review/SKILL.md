@@ -210,7 +210,7 @@ a blind spot you cannot see from inside it.
 | If you are… | Run |
 |---|---|
 | **Claude Code** | 🔴 **`/security-review`** — always. It is a separate pass with a separate model of what an attacker does, and it does not know this project's `{{CRITICAL_ASSET}}`, which is exactly why it is worth running alongside this checklist |
-| **Codex / ChatGPT** | `codex review` with a security-focused prompt, or your security review agent |
+| **Codex / ChatGPT** | `codex review < /dev/null` with a security-focused prompt — close stdin, see [`agent-roles.md`](../../workflows/agent-roles.md#how-to-run-the-cross-review) — or your security review agent |
 | **Gemini / Antigravity** | your own security review command or agent |
 | **Any other agent** | 🔴 **look for your own security review skill or command and run it.** Do not assume you have none — check. If you genuinely have none, say so in the verdict |
 

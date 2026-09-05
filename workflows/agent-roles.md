@@ -189,6 +189,21 @@ with no verdict in it gets read as "reviewed, nothing found".
 When it blows, do not retry by reflex — a second identical call usually fails identically and costs
 the same again.
 
+🔴 **When the ceiling blows, diagnose before you wait again.** A call that has been reviewing for
+twenty minutes and a call that stopped in its first second look identical from the outside: both are
+"still running". What separates them is the output already on disk.
+
+- **Read what it has produced so far** — not to judge the analysis, to see whether there is one.
+- **A byte count that does not move is a measurement, not an absence.** "Zero useful output" is the
+  most informative thing a stuck process gives you, and it is there from the first minute.
+- **Whatever those few bytes say is what the process is waiting on**, and it is almost never the
+  thing you assumed.
+
+⚠️ **The trap is that plausible causes are free.** The scope was too wide, the command was too heavy,
+the diff was too large — each explains a slow review, none of them is falsified by waiting longer,
+and changing the call changes the timing, so a wrong theory can appear to be confirmed. Read what the
+process printed before you build the second theory.
+
 🔴 **Degrade the step, not the session.** A review that did not complete makes *this step* `solo`, and
 that must be stated in the report: *"cross-review did not complete for this diff; self-review only."*
 The roster in `.crew-kit-config` does not change, and the next step tries the reviewer again.
@@ -207,7 +222,8 @@ silently: the reply comes back, it is just about nothing.
 delegation.**
 
 ```bash
-# Claude wrote it → Codex reviews
+# Claude wrote it → Codex reviews.
+# The redirect at the end is load-bearing — see below.
 codex exec --sandbox read-only "$(cat <<'PROMPT'
 Review the working tree changes in this repository. Answer ONLY these questions.
 
@@ -230,11 +246,22 @@ END WITH EXACTLY:
 VERDICT: BLOCK | PROCEED WITH CAVEAT | CLEAR
 FINDINGS: file:line — what is wrong — the concrete failure it causes
 PROMPT
-)"
+)" < /dev/null
 
 # Codex wrote it → Claude reviews
 # (run the codereview skill in the Claude session, plus /code-review and /security-review)
 ```
+
+🔴 **`< /dev/null` on every non-interactive agent CLI call.** A tool-invoked process gets a pipe for
+stdin, not a terminal, and an agent CLI reads a non-TTY stdin as more prompt: `codex exec` documents
+that a piped stdin is *appended* to the `PROMPT` argument, so it waits for an EOF that the pipe may
+never send. Measured on codex-cli 0.153.3 — with an open pipe it printed `Reading additional input
+from stdin...`, 39 bytes, and sat at zero CPU until it was killed; with `< /dev/null` the identical
+call answered and exited 0.
+
+That it is a race is what makes it expensive. Sometimes the pipe closes on its own and the call runs,
+so the hang looks intermittent and gets blamed on the reviewer, on the diff, on anything but the
+invocation. Closing the input removes the whole class.
 
 Each rule is there because its absence broke a review:
 

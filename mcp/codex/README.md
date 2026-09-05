@@ -74,8 +74,14 @@ Full policy: [`../../workflows/agent-roles.md`](../../workflows/agent-roles.md).
 **Code review, above all.** Codex has a non-interactive reviewer of its own:
 
 ```bash
-codex review          # runs a review without an interactive session
+codex review < /dev/null      # runs a review without an interactive session
 ```
+
+🔴 **The redirect is required whenever a tool, not a human, is running the command.** `codex exec`
+appends a piped stdin to the prompt, so a call started with an open pipe blocks on `Reading
+additional input from stdin...` — 39 bytes, zero CPU, forever. It closes on its own often enough to
+look intermittent. The MCP server in this kit is immune (`mcp/lib/core.mjs` always ends the child's
+stdin); a hand-rolled `codex` call from a shell is not.
 
 That is the "GPT as review agent" path the `codereview` skill's Step −1 points at. A second
 independent reviewer is worth more than a second implementer: two passes converging on a finding
