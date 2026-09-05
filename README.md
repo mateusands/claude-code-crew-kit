@@ -162,8 +162,14 @@ codebase becomes navigable by the words the humans already use.
 ## Modes — one agent, two, or the whole crew
 
 Authority lives in `.crew/info.md` (from [`crew-info.md.template`](crew-info.md.template)), versioned
-and shared. Your roster lives in `.crew-kit-config` at the repository root, gitignored — which agents
+and shared — including the name of whoever decides, so a new contributor inherits it instead of
+guessing. Your roster lives in `.crew-kit-config` at the repository root, gitignored — which agents
 *this machine* reaches, which models, and whether you are the owner.
+
+It can also set **`OWNER`**, which overrides the versioned name for that working copy — the fork whose
+gates would otherwise send you to ask a stranger, the clone whose project owner is upstream while the
+decisions about this copy are yours. 🔴 **The override is stated in every report it affects**, because
+quietly redirecting "ask the owner" to yourself removes the gate and leaves its name in the report.
 
 **The mode is the smaller of the two**, not a preference: a project that permits `crew` runs `solo` on
 a machine with one agent. Both files are read at the start of every session **and again at every

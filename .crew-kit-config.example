@@ -20,14 +20,42 @@
 # authority is how a new person inherits the rules instead of re-deriving them.
 
 
-# ─── Who you are, relative to the authority table ─────────────────────────────
-# The name you go by, and whether you are the OWNER named in .crew/info.md.
+# ─── Who decides here, and whether that is you ────────────────────────────────
+# `.crew/info.md` names the project's OWNER. That name is versioned on purpose:
+# whoever clones tomorrow has to inherit "touching auth needs an OK from X"
+# rather than guess it. Unversioning authority trades a conflict for an absence,
+# and an absence is silent.
+#
+# OWNER here OVERRIDES that name for THIS working copy, and exists because the
+# versioned name can be wrong for you through no fault of anyone's:
+#
+#   - you forked, and the gates now say to ask a person you have never met;
+#   - you cloned someone else's repository and the project's owner is upstream,
+#     while the decisions about this copy are yours;
+#   - you are operating on behalf of someone who is not the name in the file.
+#
+# 🔴 An override is DECLARED, never silent. Any report produced under one says
+# both halves — "the project names X · this copy runs under Y" — the same way
+# MODE reports what the project allows next to what this machine reaches.
+# Redirecting "ask the owner" to yourself without saying so is how a gate stops
+# existing while still appearing in the report.
+#
+# Leave it as it ships to use the versioned name. That is the normal case.
+
+WHO_AM_I: <your name>
+OWNER: (from .crew/info.md)     # override only when this copy has a different one
+I_AM_THE_OWNER: no              # yes | no
+
+# I_AM_THE_OWNER is the answer to "is WHO_AM_I the effective OWNER above?", and
+# it is declared rather than computed because a name is not an identifier: the
+# same person is "Mateus" in one file and "mateusands" in another. If the two
+# lines plainly disagree with this flag, stop and ask — do not pick a reading.
 #
 # This is the difference between "ask the owner" and "decide" — an agent telling
 # you to go ask yourself is a gate that does nothing.
-
-WHO_AM_I: <your name>
-I_AM_THE_OWNER: no          # yes | no
+#
+# 🔴 No agent ever writes this file. A human fills it in. An agent that can grant
+# itself authority by editing a config has no authority gate at all.
 
 
 # ─── What this machine can actually reach ─────────────────────────────────────

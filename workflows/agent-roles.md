@@ -13,8 +13,8 @@ by the agent that produced it.
 
 - **`{{RECORDS_DIR}}/info.md`** — versioned. What the project permits: authority per gate, red zone,
   approved vendors.
-- **`.crew-kit-config`** — gitignored. What this machine reaches: the roster, the models, and whether
-  the operator is `{{OWNER}}`.
+- **`.crew-kit-config`** — gitignored. What this machine reaches: the roster, the models, an optional
+  `OWNER` overriding the versioned one for this working copy, and whether the operator is that person.
 
 **The mode is the smaller of the two.** A project that permits `crew` runs `solo` on a machine with
 one agent, and the report says so. A roster listing an agent nobody has seen answer is worse than

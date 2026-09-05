@@ -14,6 +14,9 @@
 2. **`.crew-kit-config`** — this machine's roster: which agents are actually reachable, which models,
    and whether you are `{{OWNER}}` or working for them. Gitignored, so it differs per person. If it is
    missing, assume `solo` and say so — never assume a reviewer you have not seen answer.
+   **It may also set `OWNER`, which overrides the name in `info.md` for this working copy** — a fork,
+   or a clone whose upstream owner is someone else. When it does, say both halves wherever a report
+   names the owner; an override nobody states is a gate that quietly changed hands.
 3. **`{{RECORDS_DIR}}/language.md`** — the words this project uses. Read it before writing anything
    that needs a name; it is the shortest file here and it is what keeps naming consistent across
    sessions.

@@ -217,6 +217,12 @@ already approved. A contributor who clones tomorrow inherits these instead of gu
 and `install.sh` already added the entry. It holds what is true of *this machine and this person*:
 which agents are reachable, which models are configured, and whether the operator is the `{{OWNER}}`.
 
+It may also set **`OWNER`**, overriding the versioned name for this working copy. That is for the
+fork whose gates would otherwise send you to ask a stranger, and for the clone whose project owner is
+upstream while the decisions about this copy are yours. 🔴 **An override is stated in every report it
+affects** — *"the project names X · this copy runs under Y"* — because redirecting "ask the owner" to
+yourself without saying so removes the gate and leaves its name in the report.
+
 🔴 **Ask the human which mode applies, and check the roster before believing the answer.** Mode is the
 smaller of what the project allows and what this machine reaches — a project that permits `crew` runs
 `solo` on a machine with one agent. Do not infer `crew` from the fact that MCP servers exist in the
@@ -241,7 +247,7 @@ The division of labor between the three documents, so they do not duplicate each
 | `AGENTS.md` | **the rules** — what to do and not do here, for every agent | rarely |
 | `CLAUDE.md` | imports `AGENTS.md`; holds only Claude-specific notes | rarely |
 | `.crew/info.md` | **the authority** — who decides each gate, red zone, vendors · versioned | when trust changes |
-| `.crew-kit-config` | **the roster** — which agents this machine reaches, which models, who you are · gitignored | per machine, per person |
+| `.crew-kit-config` | **the roster** — which agents this machine reaches, which models, who you are, and an optional `OWNER` override · gitignored | per machine, per person |
 | `.crew/language.md` | **the words** — the project's own terms, and what they retired · versioned | when a term is settled or renamed |
 | `.crew/techstack.md` | **the facts** — what exists and what it is called | on every dependency/structure change |
 | `.crew/operations.md` | **the procedures** — how to run, ship and debug it | on every environment/deploy change |

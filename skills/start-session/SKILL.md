@@ -36,6 +36,12 @@ Read, in this order:
 
 ### If `info.md`, `language.md`, `techstack.md` or `operations.md` do not exist, create them now
 
+🔴 **Resolve the owner before the first gate.** `info.md` names the project's owner; `.crew-kit-config`
+may set `OWNER`, which overrides it for this working copy; `I_AM_THE_OWNER` says whether that is you.
+State the result in one line — *"owner: X per the project · Y for this copy · I am not them"* — and if
+those lines plainly contradict the flag, **stop and ask** rather than picking a reading. An override
+nobody states is a gate that quietly changed hands.
+
 🔴 **The roster is not in `info.md`.** Read `.crew-kit-config` at the repository root for which agents
 this machine actually reaches; `info.md` holds only the project's authority. If `.crew-kit-config` is
 missing, copy it from `.crew-kit-config.example`, and until it is filled in **assume `solo`** — an

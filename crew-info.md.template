@@ -27,6 +27,16 @@ That belongs in **`.crew-kit-config`** at the repository root, which is gitignor
 | **This file** — versioned | who decides each gate, the red zone, the critical asset, the approved vendors |
 | **`.crew-kit-config`** — yours | which agents this machine reaches, which models, who you are |
 
+### The owner named here is the default, not the last word
+
+`{{OWNER}}` below is what a fresh clone inherits, and it is right for the person who set the project
+up and wrong for anyone who forked it — every gate would send them to ask someone they have never
+met. `.crew-kit-config` may therefore set `OWNER` for **that working copy**, and it wins.
+
+🔴 **An override is declared in every report it affects:** *"the project names {{OWNER}} · this copy
+runs under \<name\>"*. Silently redirecting "ask the owner" to yourself removes the gate while
+leaving its name in the report, which is worse than not having it.
+
 **The mode is derived, not chosen twice.** It is the smaller of what this file allows and what your
 roster can reach. A project that permits `crew` still runs `solo` on a machine with one agent — and
 the report must say so.
