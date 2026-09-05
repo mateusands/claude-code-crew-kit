@@ -8,20 +8,22 @@
  * wrong description fails. It goes stale in silence, and it ages worse than wrong code,
  * because nobody ever runs it.
  *
- * Four checks, each one a defect that has actually been found in an installed kit:
+ * Five checks. The first four are defects that have actually been found in an installed
+ * kit; the fifth is how a skill proves the facts it carries:
  *
  *   1. a relative link that resolves nowhere
  *   2. a {{PLACEHOLDER}} that was never filled in
  *   3. a path a document calls gitignored that git actually tracks
  *   4. a script sitting in a skill's directory that its SKILL.md never mentions
+ *   5. a skill's declared selftest, run: the check that recomputes what the skill asserts
  *
  * Run it from the root of the project the kit is installed in.
  *   node .claude/scripts/check-drift.mjs; echo "exit=$?"
  */
 
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
-import { join, dirname, relative, resolve, basename, extname } from "node:path";
-import { execFileSync } from "node:child_process";
+import { join, dirname, relative, resolve, basename, extname, isAbsolute } from "node:path";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const ROOT = process.argv[2] ? resolve(process.argv[2]) : process.cwd();
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "__pycache__", "storage"]);
@@ -161,13 +163,72 @@ if (existsSync(skillsDir)) {
   }
 }
 
+/* ── 5. declared selftests ────────────────────────────────────────────────── */
+/** The kit's standing rule is that a fact a command can re-derive does not belong in a
+ *  skill. Sometimes one must live there anyway — a table of computed values, a reference
+ *  the reader needs inline. The answer then is not trust: the skill declares a selftest
+ *  that RECOMPUTES its own table from the document, and this runs it.
+ *
+ *  Declared in the SKILL.md frontmatter, as the script and its arguments:
+ *
+ *      selftest: check-table.py --selftest
+ *
+ *  Containment, because this executes something the repository names: the command is
+ *  spawned with an argv array and no shell, so nothing in the string is interpreted; and
+ *  the executable has to resolve INSIDE the skill's own directory, so a skill cannot
+ *  point the runner at an arbitrary binary. It is still code from the repository you are
+ *  working in, which is the same trust you already extend to its test suite. */
+const SELFTEST_TIMEOUT_MS = 30_000;
+
+function frontmatterSelftest(md) {
+  const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return null;
+  const line = m[1].split(/\r?\n/).find((l) => /^selftest:\s*\S/.test(l));
+  return line ? line.replace(/^selftest:\s*/, "").trim() : null;
+}
+
+if (existsSync(skillsDir)) {
+  for (const skill of readdirSync(skillsDir)) {
+    const dir = join(skillsDir, skill);
+    const doc = join(dir, "SKILL.md");
+    if (!existsSync(doc)) continue;
+    const declared = frontmatterSelftest(readFileSync(doc, "utf8"));
+    if (!declared) continue;
+
+    const [cmd, ...args] = declared.split(/\s+/);
+    const where = `.claude/skills/${skill}/SKILL.md`;
+    const exe = resolve(dir, cmd);
+    if (isAbsolute(cmd) || !exe.startsWith(dir + "/")) {
+      flag("selftest", where, `declares \`${declared}\`, which resolves outside the skill's own directory`);
+      continue;
+    }
+    if (!existsSync(exe)) {
+      flag("selftest", where, `declares \`${declared}\`, and ${cmd} is not there`);
+      continue;
+    }
+    const r = spawnSync(exe, args, { cwd: dir, encoding: "utf8", timeout: SELFTEST_TIMEOUT_MS });
+    if (r.error) {
+      // EACCES and ENOEXEC are almost always the same two omissions, and the raw
+      // "spawn EACCES" tells nobody which.
+      const hint = /EACCES|ENOEXEC/.test(r.error.code || "")
+        ? " — it needs the executable bit (chmod +x) and a shebang line"
+        : "";
+      flag("selftest", where, `\`${declared}\` could not run: ${r.error.message}${hint}`);
+    } else if (r.status !== 0) {
+      const out = `${r.stdout || ""}${r.stderr || ""}`.trim().split("\n").slice(-3).join(" / ");
+      flag("selftest", where, `\`${declared}\` exited ${r.status}${out ? ` — ${out}` : ""}`);
+    }
+  }
+}
+
 /* ── report ───────────────────────────────────────────────────────────────── */
-const order = ["link", "placeholder", "gitignore-claim", "undocumented-script"];
+const order = ["link", "placeholder", "gitignore-claim", "undocumented-script", "selftest"];
 const LABEL = {
   link: "Broken relative link",
   placeholder: "Unfilled placeholder",
   "gitignore-claim": "Claim about git that git contradicts",
   "undocumented-script": "Script the skill never mentions",
+  selftest: "A skill's own selftest, run",
 };
 
 console.log(`check-drift · ${docs.length} kit documents under ${ROOT}`);

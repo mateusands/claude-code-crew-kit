@@ -136,7 +136,28 @@ This kit's `Cannot:` contracts are the guardrail case. Everything else in a skil
 
 `node .claude/scripts/check-drift.mjs; echo "exit=$?"` — a link that resolves nowhere, a placeholder
 nobody filled, a path called gitignored that git tracks, a script beside a skill the skill never
-names. Everything above is judgment; this is the part that can be wrong in a way a machine sees.
+names, and a skill's own selftest. Everything above is judgment; this is the part that can be wrong
+in a way a machine sees.
+
+### When a computable fact has to live in the skill
+
+The pruning rule above says a fact a command re-derives belongs to the command. Sometimes one has to
+sit in the document anyway: a table the reader needs inline, values that are only useful next to the
+rule they serve. **That is a purpose gate, and the written reason is not enough on its own — ship the
+check that recomputes it.**
+
+Declare it in the frontmatter, and `check-drift` runs it:
+
+```yaml
+selftest: check-table.py --selftest
+```
+
+The script reads the table **out of the SKILL.md** and recomputes every row, so the document stays
+the source of truth and the script only proves it. A script carrying its own copy of the values
+proves that the copy agrees with itself.
+
+It must sit inside the skill's own directory, be executable, and exit non-zero when a row is wrong —
+a check that cannot fail is not a check.
 
 ---
 

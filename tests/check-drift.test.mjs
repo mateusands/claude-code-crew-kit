@@ -12,7 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync, existsSync, appendFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, readFileSync, writeFileSync, existsSync, appendFileSync, chmodSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { REPO_ROOT } from "./helpers.mjs";
@@ -112,4 +112,56 @@ test("a true sentence about a file that is not there stays quiet", (t) => {
     "`.crew-kit-config` is gitignored — copy `.crew-kit-config.example` and fill it in.\n");
   const r = run(dir);
   assert.equal(r.status, 0, `nothing here contradicts git:\n${r.stdout}`);
+});
+
+/** A skill that carries a computable fact declares the check that recomputes it. */
+function withSelftest(dir, { script, declare = "selftest.mjs", exitCode = 0, executable = true }) {
+  const skill = join(dir, ".claude/skills/coder");
+  writeFileSync(join(skill, "selftest.mjs"), script ?? `#!/usr/bin/env node\nprocess.exit(${exitCode})\n`);
+  if (executable) chmodSync(join(skill, "selftest.mjs"), 0o755);
+  const doc = join(skill, "SKILL.md");
+  const md = readFileSync(doc, "utf8");
+  // frontmatter first, and the script named in the body so check 4 stays quiet
+  writeFileSync(doc, md.replace(/^---\n/, `---\nselftest: ${declare}\n`) + "\n<!-- selftest.mjs recomputes the table above -->\n");
+}
+
+test("a skill's declared selftest runs, and a red one fails the check", (t) => {
+  const dir = installedProject(t);
+  withSelftest(dir, { exitCode: 0 });
+  assert.equal(run(dir).status, 0, "a passing selftest must not fail the check");
+
+  withSelftest(dir, { exitCode: 1 });
+  const r = run(dir);
+  assert.equal(r.status, 1, "a skill whose own check fails is a skill asserting something untrue");
+  assert.match(r.stdout, /selftest\.mjs.*exited 1/);
+});
+
+test("a selftest that is declared and missing fails, rather than being skipped", (t) => {
+  const dir = installedProject(t);
+  withSelftest(dir, { exitCode: 0 });
+  rmSync(join(dir, ".claude/skills/coder/selftest.mjs"));
+  const r = run(dir);
+  assert.equal(r.status, 1, "a declared check nobody can run is worse than no check");
+  assert.match(r.stdout, /is not there/);
+});
+
+test("a selftest cannot point outside its own skill", (t) => {
+  const dir = installedProject(t);
+  // The containment that matters: the frontmatter is a string in a repository file, and
+  // a skill naming /bin/sh or ../../anything would turn this runner into a launcher.
+  withSelftest(dir, { exitCode: 0, declare: "../../../evil.sh" });
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /outside the skill's own directory/);
+
+  withSelftest(dir, { exitCode: 0, declare: "/bin/echo hi" });
+  assert.match(run(dir).stdout, /outside the skill's own directory/);
+});
+
+test("a selftest that cannot be executed says which two things are missing", (t) => {
+  const dir = installedProject(t);
+  withSelftest(dir, { exitCode: 0, executable: false });
+  const r = run(dir);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /chmod \+x/);
 });
