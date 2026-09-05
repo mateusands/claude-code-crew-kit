@@ -110,6 +110,18 @@ while the session holding 127 observations stayed open. So the end is explicit:
 ai-memory finalize-session --agent <this agent> --session-id <this session>; echo "exit=$?"
 ```
 
+**Finding your own session id**, because an instruction nobody can follow is not an instruction. In
+Claude Code it is the directory name of the scratchpad path in your system prompt. Otherwise, ask the
+server which sessions it has open and match on `cwd` and start time:
+
+```bash
+ai-memory status --json | python3 -c "import json,sys; print(json.load(sys.stdin))"   # counts, not ids
+```
+
+🔴 **If you cannot identify it with certainty, do not guess and do not fall back to "latest open".**
+Say in the report that the session was left open, and why. A wrongly closed session ends someone
+else's live work, and the summary it produces describes a session that never happened.
+
 **Only run it when an LLM provider is configured.** Without one, finalizing produces a rule-based page
 titled after the first event — measured: a page called `pre-tool-use` whose body was the raw event
 list — and that page then pollutes every search. **A summary nobody can use is worse than no summary,
