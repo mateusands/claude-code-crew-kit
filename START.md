@@ -166,6 +166,26 @@ Then add this project's own, as you find them: an odd guard in the code, a `git 
 explains a workaround, something the human tells you. Those go in `CLAUDE.md` under **"Traps already
 paid for"**, and into the relevant skill.
 
+### 4c-bis. If you rename or translate a skill, the original must go
+
+Specializing sometimes means renaming (`plan` → `planejar`) or translating a skill into the language
+the team actually works in. That is legitimate. **What is not legitimate is keeping both.**
+
+🔴 **Two skills describing the same procedure is the worst outcome available here.** They start
+identical, one gets corrected, and after that the repository contains a right answer and a wrong one
+with equal authority — and no agent that arrives later can tell which is which. It reads as
+redundancy and behaves as a coin flip.
+
+So, when you rename or translate:
+
+1. **Delete the original.** Not archive it, not move it aside — delete it. `git` still has it.
+2. **Record the mapping in `AGENTS.md`**, in the skill table, so the new name is the only one an
+   agent ever sees.
+3. **Fix every reference**, then run `node .claude/scripts/check-drift.mjs` — a rename that left a
+   link behind is exactly what it exits 1 on.
+
+Same rule for a skill you split or merge. **One procedure, one file, one name.**
+
 ### 4d. Do not invent
 
 If you did not verify it in the code, do not write it as fact. A specialized skill full of plausible
