@@ -135,6 +135,7 @@ what the diff touches**, and say at the end which gates you applied.
 | a new `resolutions` / `overrides` entry | ask what it patches and whether the parent is the real problem — a pin inside someone else's tree is debt taken on, and it needs the reason written where the next person will find it |
 | a changed line with a comment above it | the **`comments`** skill — a comment the diff made false is a lie the next reader acts on, and the author is the least likely to see it |
 | infra: `Dockerfile`, `compose`, CI, `deploy/` | **Infrastructure secrets and defaults** |
+| a guard, early return, validation or disabled state the diff ADDS | **The guard on the symptom** — is it on the condition that causes the bug, or on the place where the bug was seen? |
 | a function > ~30 lines, or a block repeated in 3+ places | **Simplification** |
 | `{{CRITICAL_ASSET}}` | the project's integrity checklist — the highest-risk trigger |
 
@@ -277,6 +278,34 @@ reading may not be the one that executes. The symptom is always *"I fixed it and
   **passes green testing code that no longer runs** (terrible).
 
 ⚠️ **Prove BOTH sides:** show where the two implementations are and **which one production executes**.
+
+### The guard on the symptom — where it appeared, not what causes it
+
+> The shape: a bug shows up in one state and the fix lands in that state. The error branch gets the
+> `inert`, the "cleared everything" path gets the warning, the selected row gets the invariant. Each
+> guard is correct, each one is testable, and each one leaves the door beside it open — because the
+> condition that produces the bad state was never what got guarded.
+
+Ask it of every guard, early return, validation or disabled state the diff adds:
+
+🔴 **Is this on the condition that causes the problem, or on the place where the problem was seen?**
+
+- **Name the condition in words before judging the code.** *"An interaction while the operation is in
+  flight"* is a condition; *"in the error state"* is a location. If the sentence names a branch, a
+  screen or a variable instead of a state, the guard is on the symptom.
+- **Then enumerate the other places that condition holds.** If any of them is unguarded, the finding
+  is not "add it there too" — it is **the guard is in the wrong layer**, and it belongs where the
+  state is decided rather than where it is displayed.
+- **A guard that has to be repeated is a guard in the wrong place.** Same finding as LIVE duplication
+  above, reached from the other direction.
+- **The reproduction is not the boundary.** The steps that exposed the bug are one path through the
+  condition, and fitting the fix to those steps is how a class of bug becomes a series of
+  single-instance fixes.
+
+🔴 **A diff whose purpose is to FIX something needs more review than one that adds something, not
+less.** Whoever wrote it has just been shown that their model of this code was wrong — that is what
+the bug was — and the fix was written with that same model still partly in place. A fix reads as
+small, careful and obviously correct, which is exactly how it gets waved through.
 
 ### Simplification — only with the finished code in hand
 
