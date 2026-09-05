@@ -79,6 +79,45 @@ Then in `<data_dir>/config.toml`, stop a `cd` from re-scoping a running session:
 mid_session = "sticky"
 ```
 
+## 🔴 The session end does not fire where you need it
+
+Consolidation — the step that turns captured events into prose — runs when a session **ends**. On
+Claude Code, measured here, that is not what closing the window does: reopening ended a **one-second
+session with two events** while the session holding **127 observations stayed open**. Three sessions
+sat open for hours.
+
+So the end is explicit, and the kit's `end-session` skill owns it:
+
+```bash
+ai-memory finalize-session --agent claude-code --session-id <this session>; echo "exit=$?"
+```
+
+⚠️ **Only with an LLM provider configured.** Finalizing without one writes a rule-based page titled
+after the first event — measured: a page called `pre-tool-use` whose body was the raw event list. That
+page then ranks in every search. The LLM path, by contrast, returned `no-data` on an empty session and
+refused to write at all, which is the behaviour you want.
+
+## A local provider, if you want prose without egress
+
+Measured on this machine (RX 6600, 8 GB, Vulkan backend, `qwen3:8b` at `num_ctx 8192`):
+
+| | |
+|---|---|
+| One consolidation | **~150 s** for 7k input tokens, GPU at 99%, 6.0 of 6.6 GB resident |
+| Empty session | 109 s to answer `no-data`, correctly |
+| Strict JSON | valid, no reasoning leakage — but **check this per model**: the vendor warns that reasoning models hang or return empty against the JSON schema |
+| Egress | none |
+
+Ollama loads the model on demand and unloads it after five minutes idle, so nothing is reserved
+between sessions. Two settings are not optional: `num_ctx` at least 7500 (consolidation's validated
+floor is 6000 input + 1000 output, and Ollama's default is lower, so it fails with an error that does
+not mention context), and the matching `[consolidation]` limits in `config.toml`.
+
+**What it summarises is what it saw.** Tool calls and prompts — not the assistant's reasoning, which
+is not captured by default. In one measured run it correctly described the commands of a session and
+missed every finding that had been reached in conversation. That is the argument for writing the page
+by hand as well: `end-session` records what was decided, consolidation records what happened.
+
 ## The hooks are the invasive part. Decide deliberately
 
 `ai-memory install-hooks --agent claude-code --apply` adds one hook to each lifecycle event — it

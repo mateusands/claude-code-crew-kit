@@ -71,6 +71,53 @@ verified and stops checking.
 > If the project has context shared across repos: update **only** this project's slice. Polluting the
 > neighbors' is a process error. And never record secrets, credentials or real data there.
 
+## 2.4 — hand the session forward, if there is a memory server
+
+**Skip this whole section when the project has no `ai-memory` MCP** (`mcp/ai-memory/README.md`). The
+hardening you just wrote is the record either way; this makes it retrievable and hands the baton on.
+
+Two calls, and they do different jobs:
+
+**1. Write the page. This is the one that matters.** One durable page per thing the session *decided*
+or *discovered* — not a log of what happened.
+
+```
+memory_write_page  path: decisions/<slug>.md | gotchas/<slug>.md
+                   title, body, kind: decision | gotcha | rule | concept
+```
+
+Write it the way the hardening is written: the finding, the measurement behind it, and the
+consequence. **A page nobody would act on is a page nobody needed.** Three good ones beat thirty
+automatic ones.
+
+**2. Leave a handoff, when the work is unfinished.**
+
+```
+memory_handoff_begin  summary, next_steps[], open_questions[], files_touched[]
+```
+
+A handoff is claimed exactly once, by whichever agent opens this project next — Claude, Codex, or
+another. That is what it is for: **not a note you hope somebody reads, a baton that disappears when
+taken.** Skip it when the session closed cleanly and nothing is pending.
+
+### 🔴 Closing the session is a separate decision
+
+Automatic capture only becomes prose when a session *ends*, and the lifecycle hook cannot be trusted
+to do that: measured on Claude Code, closing the window ended a one-second session with two events
+while the session holding 127 observations stayed open. So the end is explicit:
+
+```bash
+ai-memory finalize-session --agent <this agent> --session-id <this session>; echo "exit=$?"
+```
+
+**Only run it when an LLM provider is configured.** Without one, finalizing produces a rule-based page
+titled after the first event — measured: a page called `pre-tool-use` whose body was the raw event
+list — and that page then pollutes every search. **A summary nobody can use is worse than no summary,
+because it ranks.**
+
+⚠️ Prefer `--session-id` over the default "latest open session". With several sessions open in one
+project, "latest" closes the wrong one.
+
 ## 2.5 — did this session make the kit wrong?
 
 ```bash
