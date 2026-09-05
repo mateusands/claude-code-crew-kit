@@ -16,6 +16,10 @@ Anything below applies **only** to Claude Code. If a rule applies to every agent
 - Run `/code-review` **and** `/security-review` as the independent second pass required by the
   `codereview` skill (Step −1). In `solo` mode they are the only second opinion that exists.
 - `/gates` · `/pre-flight` · `/honesty` · `/execute-plan` are available as slash commands.
+- 🔴 **The `plan` skill cannot be invoked through the Skill tool** — the name collides with Claude
+  Code's own `/plan`, so the call comes back telling you to ask the user to run it. Nothing announces
+  this before you try. **Open `.claude/skills/plan/SKILL.md` and follow it directly**, which is what
+  the skill asks for anyway.
 - Subagents live in `.claude/agents/`; the delegation workflow is
   `.claude/workflows/parallel-implementation.md`.
 

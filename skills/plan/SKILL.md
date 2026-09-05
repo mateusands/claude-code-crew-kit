@@ -5,6 +5,10 @@ description: Planning a fix/feature BEFORE writing code — the mirror skill of 
 
 # Plan — before the first line of code
 
+> 🔴 **In Claude Code this file is read, not invoked.** `Skill(plan)` collides with the built-in
+> `/plan` and comes back asking you to have the user run that instead — so open this file and follow
+> it. The name is shared; the procedure below is the one that belongs to this repository.
+
 - **Can:** read anything, grep the blast radius, and ask the blocking questions — each with a default.
 - **Must:** declare assumptions that can be falsified, run the gates now rather than after coding, write the test plan before the code plan, and then STOP.
 - **Cannot:** write product code.
