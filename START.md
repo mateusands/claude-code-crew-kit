@@ -20,7 +20,7 @@ outcome.
 
 ## The rule that governs this entire session
 
-🔴 **Everything before the last step is READ-ONLY on the project's source code.** You are reading the
+**Everything before the last step is READ-ONLY on the project's source code.** You are reading the
 project to describe it. You do not fix bugs, you do not refactor, you do not "improve" anything you
 find along the way. If you spot the obvious one-line bug, **write it down in the report** and move on.
 
@@ -64,7 +64,7 @@ Every fact that changes from repo to repo is marked `{{KEY}}` across the kit.
 | Placeholder | Where you find the answer |
 |---|---|
 | `{{PROJECT}}` | manifest name, or ask |
-| `{{OWNER}}` | ask. This is the person who decides — it is never inferable |
+| `{{OWNER}}` | ask. **The person who DECIDES**, never whoever owns the repository — in a clone or a fork those are different people, and every gate means the first. Never inferable |
 | `{{SOURCE_OF_TRUTH}}` | usually `CLAUDE.md`; ask if the project uses a vault/wiki |
 | `{{RECORDS_DIR}}` | default `.crew` (see Step 5) |
 | `{{PKG_MANAGER}}` | the lockfile tells you: `pnpm-lock.yaml` → pnpm, `poetry.lock` → poetry… |
@@ -82,7 +82,7 @@ Every fact that changes from repo to repo is marked `{{KEY}}` across the kit.
 **Anything you could not determine stays as an open question in the report.** A placeholder filled with
 a guess is worse than an unfilled one: the guess gets trusted.
 
-## Step 4 — 🔴 specialize the skills (this is the important step)
+## Step 4 — specialize the skills (this is the important step)
 
 Filling placeholders is mechanical. **This step is the one that decides whether the kit is useful.**
 
@@ -126,7 +126,7 @@ Go through each surviving skill and swap the abstract for the concrete:
 
 **Cite `file:line` wherever you can.** A path is worth ten sentences of description.
 
-#### 🔴 What goes in a skill, and what must stay a command
+#### What goes in a skill, and what must stay a command
 
 A skill carries **what the repository cannot answer**. For everything the repository *can* answer, it
 points at the command instead.
@@ -166,6 +166,26 @@ Then add this project's own, as you find them: an odd guard in the code, a `git 
 explains a workaround, something the human tells you. Those go in `CLAUDE.md` under **"Traps already
 paid for"**, and into the relevant skill.
 
+### 4c-bis. If you rename or translate a skill, the original must go
+
+Specializing sometimes means renaming (`plan` → `planejar`) or translating a skill into the language
+the team actually works in. That is legitimate. **What is not legitimate is keeping both.**
+
+**Two skills describing the same procedure is the worst outcome available here.** They start
+identical, one gets corrected, and after that the repository contains a right answer and a wrong one
+with equal authority — and no agent that arrives later can tell which is which. It reads as
+redundancy and behaves as a coin flip.
+
+So, when you rename or translate:
+
+1. **Delete the original.** Not archive it, not move it aside — delete it. `git` still has it.
+2. **Record the mapping in `AGENTS.md`**, in the skill table, so the new name is the only one an
+   agent ever sees.
+3. **Fix every reference**, then run `node .claude/scripts/check-drift.mjs` — a rename that left a
+   link behind is exactly what it exits 1 on.
+
+Same rule for a skill you split or merge. **One procedure, one file, one name.**
+
 ### 4d. Do not invent
 
 If you did not verify it in the code, do not write it as fact. A specialized skill full of plausible
@@ -178,6 +198,7 @@ This is where the project's working memory lives.
 ```
 .crew/
 ├── info.md           # the authority: who decides each gate, red zone, approved vendors (VERSIONED)
+├── language.md       # the words this project uses, and the ones it retired (VERSIONED)
 ├── techstack.md      # what the stack IS: versions, commands, structure, dependency rules
 ├── operations.md     # how it RUNS: environments, deploy, branches, ports, seeds, secrets
 ├── plans-local/      # plans, by day. Retention: 7 days. Not versioned
@@ -196,12 +217,24 @@ already approved. A contributor who clones tomorrow inherits these instead of gu
 and `install.sh` already added the entry. It holds what is true of *this machine and this person*:
 which agents are reachable, which models are configured, and whether the operator is the `{{OWNER}}`.
 
+It may also set **`OWNER`**, overriding the versioned name for this working copy. That is for the
+fork whose gates would otherwise send you to ask a stranger, and for the clone whose project owner is
+upstream while the decisions about this copy are yours. 🔴 **An override is stated in every report it
+affects** — *"the project names X · this copy runs under Y"* — because redirecting "ask the owner" to
+yourself without saying so removes the gate and leaves its name in the report.
+
 🔴 **Ask the human which mode applies, and check the roster before believing the answer.** Mode is the
 smaller of what the project allows and what this machine reaches — a project that permits `crew` runs
 `solo` on a machine with one agent. Do not infer `crew` from the fact that MCP servers exist in the
 config: a server entry is not a signed-in CLI, and a roster naming an unreachable agent is worse than
 `solo`, because the process then expects reviews that never happen. A roster naming agents that are not actually reachable is worse than
 `solo`, because the process will then expect reviews that never happen and nobody will notice.
+
+**Create `language.md` too**, from [`.claude/crew-language.md.template`](.claude/crew-language.md.template) — the terms this
+project already uses, read out of the code and the history. 🔴 **Record the words that are there, do
+not invent better ones.** A term you coined that appears nowhere in the code is a term the next agent
+will use and nobody will recognise. The section that pays most is the one naming a word that meant
+two things, and which meaning won.
 
 **Create `techstack.md` and `operations.md` too**, filled with what you learned in Step 2 — not with
 placeholders. If a section has no answer, write `<unknown — needs confirmation>` rather than an
@@ -214,7 +247,8 @@ The division of labor between the three documents, so they do not duplicate each
 | `AGENTS.md` | **the rules** — what to do and not do here, for every agent | rarely |
 | `CLAUDE.md` | imports `AGENTS.md`; holds only Claude-specific notes | rarely |
 | `.crew/info.md` | **the authority** — who decides each gate, red zone, vendors · versioned | when trust changes |
-| `.crew-kit-config` | **the roster** — which agents this machine reaches, which models, who you are · gitignored | per machine, per person |
+| `.crew-kit-config` | **the roster** — which agents this machine reaches, which models, who you are, and an optional `OWNER` override · gitignored | per machine, per person |
+| `.crew/language.md` | **the words** — the project's own terms, and what they retired · versioned | when a term is settled or renamed |
 | `.crew/techstack.md` | **the facts** — what exists and what it is called | on every dependency/structure change |
 | `.crew/operations.md` | **the procedures** — how to run, ship and debug it | on every environment/deploy change |
 
@@ -234,7 +268,7 @@ Add to `.gitignore`:
 .crew-kit-config      # install.sh adds this one already — check before duplicating
 ```
 
-Leave `hardenings/`, `techstack.md` and `operations.md` versioned — they are for the team, not for
+Leave `hardenings/`, `language.md`, `techstack.md` and `operations.md` versioned — they are for the team, not for
 one machine.
 
 ## Step 6 — install the MCP servers
@@ -259,9 +293,19 @@ that delegated writes never include git: commit, push and merge stay with the or
 ## Step 7 — verify, then report
 
 ```bash
-grep -rn "{{" .claude/ CLAUDE.md    # must return nothing, or only documented open questions
-ls .crew/                             # techstack.md, operations.md, plans-local/, hardenings/
+node .claude/scripts/check-drift.mjs; echo "exit=$?"    # must be exit=0
+ls .crew/                                               # techstack.md, operations.md, plans-local/, hardenings/
 ```
+
+🔴 **`check-drift` is the only thing in this kit that fails.** Everything else you have just written
+is prose that the next agent reads and decides to follow. This one exits 1 on a link that resolves
+nowhere, a placeholder you missed, a path you called gitignored that git actually tracks, and a script
+shipped inside a skill that the skill never mentions.
+
+It is the answer to the failure mode this whole step exists to prevent: **a specialization that was
+true the day it was written.** Wrong documentation about infrastructure ages worse than wrong code,
+because nobody ever runs it. Run it now, run it at the start of a session, and run it before you
+claim the kit is in good shape.
 
 Report to the human, in this order:
 

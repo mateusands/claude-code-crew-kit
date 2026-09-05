@@ -10,10 +10,18 @@ backend says only how to invoke its CLI, how to read its output, and what its co
 stays broken in the other two.
 
 ```bash
-cp mcp/.mcp.json /path/to/repo/.mcp.json     # playwright + agy + codex + copilot + context7
-# or just one:
-cp mcp/playwright/.mcp.json /path/to/repo/.mcp.json
+cp .mcp.json.example .mcp.json     # written by install.sh with this project's real paths
+# or, without the installer:
+cp mcp/.mcp.json /path/to/repo/.mcp.json     # then replace /absolute/path/to/.claude yourself
 ```
+
+🔴 **Registering is a separate step from installing, and skipping it fails silently.** `install.sh`
+copies the servers to `.claude/mcp/`; nothing registers them. Until a `.mcp.json` names a server it
+does not exist as a tool, there is no error that says so, and the natural next move is to go looking
+for the CLI on `$PATH` — which is a different thing running under none of this kit's containment.
+
+**`.mcp.json` is read at startup: restart the agent after writing it**, then confirm the tools are
+there before relying on them.
 
 `.mcp.json` at the repo root is project-scoped and shared with the team through git. Personal servers
 belong in your user config instead (`claude mcp add`).

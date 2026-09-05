@@ -27,26 +27,48 @@ const PROTOCOL_FALLBACK = "2024-11-05";
 
 export function run(cmd, args, { cwd, timeoutMs, input, signal } = {}) {
   return new Promise((res) => {
+    if (signal?.aborted) return res({ code: -1, stdout: "", stderr: "aborted before start", timedOut: false });
     let child;
     try {
-      child = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"], signal });
+      // `detached` makes the child lead its own process group, which is what lets a
+      // ceiling or a cancel kill what the EXECUTOR spawned as well. Signalling the
+      // child alone reaches only the wrapper process: its subprocesses survive, hold
+      // the stdout pipe open, and the call does not return until they finish on their
+      // own — so the timeout stops meaning anything at the moment it is most needed.
+      // Measured: a stand-in that shells out slept its full 30s past a 1s ceiling.
+      child = spawn(cmd, args, { cwd, stdio: ["pipe", "pipe", "pipe"], detached: true });
     } catch (e) {
       return res({ code: -1, stdout: "", stderr: String(e), timedOut: false });
     }
-    let stdout = "", stderr = "", timedOut = false;
-    const timer = timeoutMs
-      ? setTimeout(() => { timedOut = true; child.kill("SIGKILL"); }, timeoutMs)
-      : null;
+    let stdout = "", stderr = "", timedOut = false, settled = false, drain = null;
+    const timer = timeoutMs ? setTimeout(() => { timedOut = true; killTree(); }, timeoutMs) : null;
+
+    function killTree() {
+      // Negative pid = the whole group. Falls back to the child alone if the group is
+      // already gone, which throws ESRCH rather than returning a value.
+      try { process.kill(-child.pid, "SIGKILL"); }
+      catch { try { child.kill("SIGKILL"); } catch { /* already dead */ } }
+    }
+    function finish(o) {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      if (drain) clearTimeout(drain);
+      res(o);
+    }
+    const onAbort = () => killTree();
+    signal?.addEventListener("abort", onAbort, { once: true });
+
     child.stdout.on("data", (d) => (stdout += d));
     child.stderr.on("data", (d) => (stderr += d));
-    child.on("error", (e) => {
-      if (timer) clearTimeout(timer);
-      res({ code: -1, stdout, stderr: stderr + String(e), timedOut });
+    child.on("error", (e) => finish({ code: -1, stdout, stderr: stderr + String(e), timedOut }));
+    // `close` waits for the stdio pipes, which an escaped grandchild can hold open past
+    // the kill. `exit` is the process itself; after it, output has at most a moment left.
+    child.on("exit", (code) => {
+      if (drain) return;
+      drain = setTimeout(() => finish({ code: code ?? -1, stdout, stderr, timedOut }), 200);
     });
-    child.on("close", (code) => {
-      if (timer) clearTimeout(timer);
-      res({ code, stdout, stderr, timedOut });
-    });
+    child.on("close", (code) => finish({ code, stdout, stderr, timedOut }));
     if (input !== undefined) child.stdin.end(input);
     else child.stdin.end();
   });
@@ -495,6 +517,24 @@ function report(b, { header, violations, unattributed, touched, declared, execTe
 
 /* ─────────────────────────── calling the backend ─────────────────────────── */
 
+/** How much of a killed executor's output comes back. Enough for a partial report,
+ *  bounded so a JSONL transcript cannot flood the orchestrator's context. */
+const PARTIAL_CHARS = 4000;
+
+/** Output recovered from a killed run, labelled. Without the label a transcript reads
+ *  as a report, which is the failure this whole kit is built against. */
+function partialText(r) {
+  const t = (r.text || "").trim();
+  if (!t) return "";
+  return [
+    "── PARTIAL OUTPUT, captured before the executor was killed ──",
+    "It did not finish. This may be a transcript rather than a report; verify anything you act on.",
+    r.truncated ? `(truncated to the first ${PARTIAL_CHARS} characters)` : "",
+    "",
+    t,
+  ].filter(Boolean).join("\n");
+}
+
 async function callExecutor(b, opts) {
   const built = b.buildArgs(opts);
   if (built.error) return { ok: false, error: built.error };
@@ -511,7 +551,24 @@ async function callExecutor(b, opts) {
   if (opts.signal?.aborted) {
     return { ok: false, cancelled: true, error: `Cancelled by ${b.name}_cancel. Partial work may exist in the working tree — read the diff before doing anything else.` };
   }
-  if (r.timedOut) return { ok: false, error: `${b.name} timed out after ${opts.timeoutS}s. Partial work may exist in the working tree — check git status.` };
+  if (r.timedOut) {
+    // A cut-off is not an empty run, and it used to be reported as one: everything the
+    // executor had already printed was discarded with the process. A long review that
+    // finished its analysis and died before exiting came back as a bare FAILED, and the
+    // only reason a round survived was that the executor had been told to write its
+    // report to a file. Whatever arrived before the kill is parsed and handed back,
+    // capped, and labelled as partial so nobody reads a transcript as a verdict.
+    const partial = b.parseResult(r) || {};
+    const captured = (partial.text || "").trim();
+    return {
+      ok: false,
+      timedOut: true,
+      resumeId: partial.resumeId ?? null,
+      text: captured ? captured.slice(0, PARTIAL_CHARS) : "",
+      truncated: captured.length > PARTIAL_CHARS,
+      error: `${b.name} was killed after ${opts.timeoutS}s. It did NOT finish. Partial work may exist on disk — check git status, and read any file the executor was told to write its report to BEFORE discarding this round.`,
+    };
+  }
   if (r.code === -1) return { ok: false, error: `Could not run \`${b.bin}\`: ${r.stderr.trim()}` };
   return { ok: r.code === 0, ...b.parseResult(r), stderr: r.stderr.trim(), code: r.code };
 }
@@ -545,7 +602,13 @@ function reapJobs() {
 
 const elapsed = (rec) => Math.round(((rec.finishedAt ?? Date.now()) - rec.startedAt) / 1000);
 const runningJobs = () => [...JOBS.values()].filter((j) => j.state === "working");
-const jobLine = (rec) => `${rec.id} · ${rec.state} · ${elapsed(rec)}s · owns ${rec.owned.join(", ")}`;
+const jobLine = (rec) =>
+  `${rec.id} · ${rec.state} · ${elapsed(rec)}s · owns ${rec.owned.join(", ")}` +
+  (rec.state === "timed_out"
+    // `failed` reads as "throw the round away". A cut-off executor may have written
+    // most of its work first, so the state has to say that where it is read.
+    ? ` — cut off, NOT empty: read its report and the diff before discarding the round`
+    : "");
 
 /* ─────────────────────────── the tools ─────────────────────────── */
 
@@ -577,12 +640,12 @@ function makeTools(b) {
 
   const tools = [
     { name: `${b.name}_task`, description: `Delegate ONE small, low-risk implementation task to the ${b.name} executor, which may write only to the files you list. ${delegationRules} This call BLOCKS until it finishes — use ${b.name}_start to fan out instead.`, inputSchema: taskSchema },
-    { name: `${b.name}_start`, description: `Start a delegated task and get a HANDLE back immediately instead of waiting. Same rules, charter and git audit as ${b.name}_task. Use it to fan several disjoint slices out at once, or whenever you want to keep working — or keep talking to the human — while the executor runs. Two jobs may not declare overlapping files: the audit could not then say which one wrote what, so the second call is refused. 🔴 The handle says the executor STARTED and nothing more; the work is unverified until you read its report with ${b.name}_await, and then read the diff yourself.`, inputSchema: taskSchema },
+    { name: `${b.name}_start`, description: `Start a delegated task and get a HANDLE back immediately instead of waiting. Same rules, charter and git audit as ${b.name}_task. Use it to fan several disjoint slices out at once, or whenever you want to keep working — or keep talking to the human — while the executor runs. For a long analysis, give it its report file to own and tell it to write AS IT GOES rather than at the end: that is what turns a job killed at the ceiling from total loss into partial work you can read. Two jobs may not declare overlapping files: the audit could not then say which one wrote what, so the second call is refused. 🔴 The handle says the executor STARTED and nothing more; the work is unverified until you read its report with ${b.name}_await, and then read the diff yourself.`, inputSchema: taskSchema },
     { name: `${b.name}_await`, description: `Wait for jobs started with ${b.name}_start and return their full reports, audit included. Omit job_ids to wait for every job still running. It blocks, and your host may move it to the background and notify you when it settles. Waiting costs no wall clock: the executors have been running since ${b.name}_start.`, inputSchema: { type: "object", properties: { job_ids: { type: "array", items: { type: "string" }, description: "Handles. Omit to wait for all running jobs." } } } },
     { name: `${b.name}_status`, description: `Peek at delegated jobs without waiting — state, elapsed seconds and declared ownership. Omit job_id to list them all. Never blocks. 🔴 Not a substitute for ${b.name}_await and not something to call in a loop: it answers only when you think to ask, so polling it is how you end up watching a job instead of working while it runs.`, inputSchema: { type: "object", properties: { job_id: { type: "string" } } } },
     { name: `${b.name}_result`, description: "Read a finished job's report again without waiting. Says so if the job is still running.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
     { name: `${b.name}_cancel`, description: "Kill a running job. 🔴 Whatever the executor already wrote STAYS in the working tree, half-done — cancelling is not undoing. Read the diff afterwards.", inputSchema: { type: "object", properties: { job_id: { type: "string" } }, required: ["job_id"] } },
-    { name: `${b.name}_ask`, description: `Ask the ${b.name} executor a READ-ONLY question about a codebase — analysis, a broad search, a summary, a second opinion. It writes nothing, and a git audit confirms that. Good for offloading wide reading you would otherwise spend your own context on. Its answer is INPUT, not a verdict: verify anything you are going to act on.`, inputSchema: { type: "object", properties: { question: { type: "string", description: "The question. Ask for file:line citations so you can verify the answer." }, cwd: { type: "string" }, context_files: { type: "array", items: { type: "string" } }, ...b.extraTaskProps, reserved_files: { type: "array", items: { type: "string" }, description: "Paths you will be editing yourself while this read-only call runs." }, orchestrator_writing: { type: "boolean", description: "True if you will keep working in the tree; changes then come back as unattributed rather than as a read-only violation." }, timeout_s: { type: "number" } }, required: ["question", "cwd"] } },
+    { name: `${b.name}_ask`, description: `Ask the ${b.name} executor a READ-ONLY question about a codebase — analysis, a broad search, a summary, a second opinion. It writes nothing, and a git audit confirms that. Good for offloading wide reading you would otherwise spend your own context on. Its answer is INPUT, not a verdict: verify anything you are going to act on. 🔴 This call BLOCKS until the executor finishes and there is no read-only handle: for anything that will take minutes — a full review, a wide sweep — use ${b.name}_start instead and let it own ONE file, its report. You get a handle immediately, and the analysis then lives on disk, where a cut-off costs the tail of the work instead of all of it.`, inputSchema: { type: "object", properties: { question: { type: "string", description: "The question. Ask for file:line citations so you can verify the answer." }, cwd: { type: "string" }, context_files: { type: "array", items: { type: "string" } }, ...b.extraTaskProps, reserved_files: { type: "array", items: { type: "string" }, description: "Paths you will be editing yourself while this read-only call runs." }, orchestrator_writing: { type: "boolean", description: "True if you will keep working in the tree; changes then come back as unattributed rather than as a read-only violation." }, timeout_s: { type: "number" } }, required: ["question", "cwd"] } },
     { name: `${b.name}_followup`, description: `Continue a previous ${b.name} conversation by its ${b.resumeIdLabel} — to correct course, ask for a fix, or answer a question the executor was blocked on. Cheaper and more accurate than restating the whole task, because the executor keeps its context. Same rules and the same git audit apply.`, inputSchema: { type: "object", properties: { [b.resumeIdLabel]: { type: "string" }, message: { type: "string" }, cwd: { type: "string" }, owned_files: { type: "array", items: { type: "string" }, description: "Re-state the owned files if this follow-up writes. Omit for a read-only follow-up." }, timeout_s: { type: "number" } }, required: [b.resumeIdLabel, "message", "cwd"] } },
   ];
   if (b.modelsArgs) {
@@ -657,7 +720,7 @@ function makeImpl(b) {
     const audit = await finish(prep, a.owned_files, after);
 
     if (!r.ok && r.error) {
-      return { isError: true, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_task FAILED: ${r.error}`, violations: audit.violations, touched: audit.touched, declared: a.owned_files, execText: r.text || "", usage: "", resumeId: null, auditNote: audit.note }) };
+      return { isError: true, timedOut: !!r.timedOut, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_task ${r.timedOut ? "TIMED OUT" : "FAILED"}: ${r.error}`, violations: audit.violations, touched: audit.touched, declared: a.owned_files, execText: partialText(r), usage: "", resumeId: r.resumeId ?? null, auditNote: audit.note }) };
     }
     const violations = [...audit.violations];
     if (r.status === "CANCELED") {
@@ -693,7 +756,7 @@ function makeImpl(b) {
       const ctrl = new AbortController();
       const rec = { id, state: "working", cwd: prep.cwd, owned: a.owned_files, startedAt: Date.now(), finishedAt: null, result: null, ctrl };
       rec.promise = runTask(a, prep, ctrl.signal)
-        .then((r) => { rec.result = r; rec.state = ctrl.signal.aborted ? "cancelled" : r.isError ? "failed" : "completed"; })
+        .then((r) => { rec.result = r; rec.state = ctrl.signal.aborted ? "cancelled" : r.timedOut ? "timed_out" : r.isError ? "failed" : "completed"; })
         .catch((e) => { rec.result = { isError: true, text: `${b.name}-mcp internal error: ${e?.stack || e}` }; rec.state = "failed"; })
         .finally(() => {
           rec.finishedAt = Date.now();
@@ -772,7 +835,9 @@ function makeImpl(b) {
       if (!prep.orchestrator.orchestratorWriting) {
         for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a ${b.name}_ask call.`);
       }
-      if (!r.ok && r.error) return { isError: true, text: `${b.name}_ask FAILED: ${r.error}` };
+      // A failure used to return the error alone, dropping the audit with it — so a
+      // call that timed out after writing files reported nothing about those files.
+      if (!r.ok && r.error) return { isError: true, timedOut: !!r.timedOut, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_ask ${r.timedOut ? "TIMED OUT" : "FAILED"}: ${r.error}`, violations, touched: audit.touched, declared: null, execText: partialText(r), usage: "", resumeId: r.resumeId ?? null, auditNote: audit.note }) };
       return { isError: violations.length > 0, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_ask ${r.status || "SUCCESS"} · read-only`, violations, touched: audit.touched, declared: null, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
       });
     },
@@ -793,7 +858,7 @@ function makeImpl(b) {
       const audit = await finish(prep, owned, after);
       const violations = [...audit.violations];
       if (!owned.length) for (const f of audit.touched) violations.push(`WRITE IN READ-ONLY MODE — \`${f}\` changed during a read-only follow-up.`);
-      if (!r.ok && r.error) return { isError: true, text: `${b.name}_followup FAILED: ${r.error}` };
+      if (!r.ok && r.error) return { isError: true, timedOut: !!r.timedOut, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_followup ${r.timedOut ? "TIMED OUT" : "FAILED"}: ${r.error}`, violations, touched: audit.touched, declared: owned, execText: partialText(r), usage: "", resumeId: r.resumeId ?? null, auditNote: audit.note }) };
       return { isError: violations.length > 0, text: report(b, { unattributed: audit.unattributed, header: `${b.name}_followup ${r.status || "SUCCESS"}`, violations, touched: audit.touched, declared: owned, execText: (r.text || "").trim(), usage: r.usage, resumeId: r.resumeId, auditNote: audit.note, diagnostic: b.diagnose?.(r.stderr) }) };
       });
     },

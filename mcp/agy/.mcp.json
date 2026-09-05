@@ -2,7 +2,12 @@
   "mcpServers": {
     "agy": {
       "command": "node",
-      "args": ["/absolute/path/to/.claude/mcp/agy/server.mjs"]
+      "args": [
+        "/absolute/path/to/.claude/mcp/agy/server.mjs"
+      ],
+      "env": {
+        "AGY_MCP_MODEL": "gemini-3.8-flash-high"
+      }
     }
   }
 }

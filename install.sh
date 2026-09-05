@@ -53,7 +53,11 @@ fi
 
 mkdir -p "$DEST"
 cp -r "$SOURCE_DIR/skills" "$SOURCE_DIR/agents" "$SOURCE_DIR/commands" "$SOURCE_DIR/workflows" "$DEST/"
-cp "$SOURCE_DIR/settings.json" "$SOURCE_DIR/crew-info.md.template" "$DEST/"
+# The only gate in this kit that exits 1. Everything else is prose an agent chooses to
+# follow, and a description of the repository that quietly stopped being true is the one
+# defect no amount of reading catches.
+cp -r "$SOURCE_DIR/scripts" "$DEST/scripts"
+cp "$SOURCE_DIR/settings.json" "$SOURCE_DIR/crew-info.md.template" "$SOURCE_DIR/crew-language.md.template" "$DEST/"
 
 # Root files: never clobber one the project already has.
 copy_if_absent() {
@@ -81,7 +85,7 @@ copy_if_absent "$SOURCE_DIR/AGENTS.md.template" "$TARGET_ROOT/AGENTS.md"
 copy_if_absent "$SOURCE_DIR/CLAUDE.md.template" "$TARGET_ROOT/CLAUDE.md"
 copy_if_absent "$SOURCE_DIR/START.md" "$TARGET_ROOT/START.md"
 
-# 🔴 Under .claude/, not at the project root. Every .mcp.json example this kit ships
+# Under .claude/, not at the project root. Every .mcp.json example this kit ships
 # already says `.claude/mcp/<server>/server.mjs`, and every relative link inside mcp/**
 # points at ../agents, ../skills and ../workflows — which land in .claude/. Installed at
 # the root those six links resolved to directories that do not exist there, and the
@@ -100,6 +104,17 @@ fi
 # them the file. It sits beside crewwatch-version because the two answer the same
 # question: where this came from, and under what terms.
 cp "$SOURCE_DIR/LICENSE" "$DEST/LICENSE-crewwatch"
+
+# A server that is copied but never registered does not exist. The kit shipped the
+# servers under .claude/mcp/ and left a .mcp.json whose paths read
+# `/absolute/path/to/...`, so registering meant hand-editing three of them — and when
+# the step was skipped the tools were simply absent, with no error that pointed at the
+# cause. The example is now written with this project's real paths already in it.
+#
+# It is an EXAMPLE and not `.mcp.json` on purpose: that file is shared project
+# configuration, it decides which servers everyone who opens the repo is asked to
+# approve, and that is not the installer's call to make.
+sed "s|/absolute/path/to/.claude|$DEST|g" "$SOURCE_DIR/mcp/.mcp.json" > "$TARGET_ROOT/.mcp.json.example"
 
 VERSION="$(git -C "$SOURCE_DIR" describe --tags --always 2>/dev/null || echo unknown)"
 COMMIT="$(git -C "$SOURCE_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
@@ -120,8 +135,19 @@ echo "project — keep it if you publish a repository that contains these files.
 echo
 echo "Copy .crew-kit-config.example to .crew-kit-config and fill in your roster — it is gitignored."
 echo
-echo "The MCP servers are at .claude/mcp/. Copy the .mcp.json you want to the project root and"
-echo "point it at .claude/mcp/<server>/server.mjs — that is where the servers actually live."
+echo "The MCP servers are at .claude/mcp/, and they are NOT registered yet — until you register"
+echo "them they do not exist as tools, and nothing will tell you why they are missing."
+echo
+echo "  cp .mcp.json.example .mcp.json     # already points at $DEST/mcp/"
+echo "  # then RESTART your agent: .mcp.json is read at startup"
+echo
+echo "Trim it to the servers whose CLI you actually have installed and signed in — a server"
+echo "entry is not a working executor, and a roster that names one is worse than an empty one."
+echo
+echo "One gate here exits 1 rather than asking you to be careful — run it whenever the kit"
+echo "and the repository might have drifted apart:"
+echo
+echo "  node .claude/scripts/check-drift.mjs; echo \"exit=\$?\""
 echo
 echo "Next: SECURITY.md.template is not installed by default — copy it yourself if this repo is public."
 echo "Then, in the project, tell the agent:  \"Read START.md and follow it.\""

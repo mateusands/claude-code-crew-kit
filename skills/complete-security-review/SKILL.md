@@ -52,6 +52,13 @@ git ls-files | sed 's/.*\.//' | sort | uniq -c | sort -rn | head   # languages
 Then find and **count** each class you are about to sweep — routes/handlers, forms, queries,
 file-upload paths, external calls. Use the project's own conventions (`{{LAYERS}}`) to locate them.
 
+🔴 **Sweeping a class means walking all of it, and that is what the
+[`surface-sweeper`](../../agents/surface-sweeper.md) subagent is for**: it traces one field from its
+origin to every screen, export and report that consumes it, which is how you find the second surface
+that will disagree with the first. If your host does not allow calling a subagent unasked, do the
+trace by hand and **state the number you walked** — the number is what separates a sweep from a
+sample.
+
 Write the map down. A sweep with no denominator cannot be completed honestly.
 
 Also read `{{RECORDS_DIR}}/info.md` and `{{SOURCE_OF_TRUTH}}`: `{{SENSITIVE_DATA}}`,
@@ -210,7 +217,7 @@ a blind spot you cannot see from inside it.
 | If you are… | Run |
 |---|---|
 | **Claude Code** | 🔴 **`/security-review`** — always. It is a separate pass with a separate model of what an attacker does, and it does not know this project's `{{CRITICAL_ASSET}}`, which is exactly why it is worth running alongside this checklist |
-| **Codex / ChatGPT** | `codex review` with a security-focused prompt, or your security review agent |
+| **Codex / ChatGPT** | `codex review < /dev/null` with a security-focused prompt — close stdin, see [`agent-roles.md`](../../workflows/agent-roles.md#how-to-run-the-cross-review) — or your security review agent |
 | **Gemini / Antigravity** | your own security review command or agent |
 | **Any other agent** | 🔴 **look for your own security review skill or command and run it.** Do not assume you have none — check. If you genuinely have none, say so in the verdict |
 

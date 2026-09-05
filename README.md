@@ -78,10 +78,10 @@ update" changes an outcome.
 ├── agents/                     # 5 subagents
 ├── commands/                   # 4 commands that stitch the skills together
 ├── workflows/                  # role policy + multi-agent orchestration
-└── skills/                     # 18 skills
+└── skills/                     # 20 skills
 ```
 
-### The 18 skills
+### The 20 skills
 
 | Skill | Role |
 |---|---|
@@ -90,6 +90,7 @@ update" changes an outcome.
 | `plan-review` | the OTHER agent reviews that plan before any code exists |
 | `coder` | the discipline of the act of writing (between plan and review) |
 | `codereview` | senior review of the diff, with triage, severity and a verdict |
+| `diagnosing-bugs` | why is it broken — a loop that goes red before any theory exists |
 | `complete-security-review` | full-repository security audit, with coverage stated as numbers |
 | `design-review` | visual craft — what `codereview` does not look at |
 | `local-testing` | prove it at runtime (L1→L5), not in a green suite — and L5 asks whether the artifact is even deployed |
@@ -103,6 +104,7 @@ update" changes an outcome.
 | `audit-trail` | no action without a trace |
 | `end-session` | permanent hardening report + update the source of truth |
 | `onboard-agent` | add a new CLI agent to the crew, after it passes the containment battery |
+| `writing-for-agents` | how to write a document an agent runs — context load, disclosure, criteria, leading words |
 
 ### The 5 subagents
 
@@ -131,6 +133,7 @@ Created by the agent during onboarding, maintained by `start-session` and `end-s
 
 ```
 .crew/
+├── language.md       # the WORDS this project uses, and the ones it retired
 ├── techstack.md      # what the stack IS: versions, commands, structure
 ├── operations.md     # how it RUNS: environments, deploy, branches, ports, seeds
 ├── plans-local/      # plans, by day · retention 7 days · gitignored
@@ -144,6 +147,13 @@ redundant with the code, so `plans-local/` expires after 7 days and `start-sessi
 hardening is knowledge — what was decided, why, and which traps have been paid for — so
 `hardenings/` **never expires** and is versioned for the team.
 
+**`language.md` is the shortest file and the one that pays first.** An agent with no name for a thing
+describes it in twenty words, does it again next session, and invents a third name on the way. One
+shared term collapses all of that — *"a problem in the materialization cascade"* rather than *"a
+problem when a lesson inside a section of a course is given a real place in the file system"* — and
+the payoff is not only concision: variables, functions and files end up named consistently, and the
+codebase becomes navigable by the words the humans already use.
+
 > Both paths come from `{{RECORDS_DIR}}`, which defaults to `.crew`. Change it if the project already
 > has a convention.
 
@@ -152,8 +162,14 @@ hardening is knowledge — what was decided, why, and which traps have been paid
 ## Modes — one agent, two, or the whole crew
 
 Authority lives in `.crew/info.md` (from [`crew-info.md.template`](crew-info.md.template)), versioned
-and shared. Your roster lives in `.crew-kit-config` at the repository root, gitignored — which agents
+and shared — including the name of whoever decides, so a new contributor inherits it instead of
+guessing. Your roster lives in `.crew-kit-config` at the repository root, gitignored — which agents
 *this machine* reaches, which models, and whether you are the owner.
+
+It can also set **`OWNER`**, which overrides the versioned name for that working copy — the fork whose
+gates would otherwise send you to ask a stranger, the clone whose project owner is upstream while the
+decisions about this copy are yours. 🔴 **The override is stated in every report it affects**, because
+quietly redirecting "ask the owner" to yourself removes the gate and leaves its name in the report.
 
 **The mode is the smaller of the two**, not a preference: a project that permits `crew` runs `solo` on
 a machine with one agent. Both files are read at the start of every session **and again at every
@@ -294,7 +310,7 @@ filling them; `grep -rn "{{" .claude/ CLAUDE.md` lists what is missing.
 | Placeholder | What it is | Example |
 |---|---|---|
 | `{{PROJECT}}` | project name | `PDF Manager` |
-| `{{OWNER}}` | who decides (product owner) | `Mateus` |
+| `{{OWNER}}` | who **decides** — not who owns the repository | `Mateus` |
 | `{{SOURCE_OF_TRUTH}}` | where the context lives | `CLAUDE.md` |
 | `{{RECORDS_DIR}}` | the project's memory directory | `.crew` |
 | `{{PKG_MANAGER}}` | package manager | `pnpm` · `yarn` · `pip` |
@@ -341,6 +357,15 @@ models on small context windows: the re-read discipline in `AGENTS.md` (open the
 time, never run it from memory), the per-skill **Can / Must / Cannot** contract, the deviation
 lifecycle `OPEN → ADDRESSED → INCORPORATED`, and the rule that whoever decides writes the record
 while review only flags its absence. The ideas are his; the wording here is ours.
+
+Four more came from [mattpocock/skills](https://github.com/mattpocock/skills) by
+[@mattpocock](https://github.com/mattpocock), MIT: the diagnosis discipline behind `diagnosing-bugs`
+(a loop that goes red before any hypothesis, and three to five ranked falsifiable hypotheses rather
+than one), the authoring theory behind `writing-for-agents` (the two loads, the disclosure ladder,
+completion criteria, leading words, and negation as a failure mode), the user-invoked vs
+model-invoked axis now declared in the frontmatter of the skills only a human starts, and
+`.crew/language.md`, which is his `CONTEXT.md` fitted to this kit's records directory. The ideas and
+the structure are his; the text and the measurements in it are ours.
 
 ## License
 

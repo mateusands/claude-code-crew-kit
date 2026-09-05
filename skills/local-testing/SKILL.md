@@ -46,12 +46,18 @@ difference revealed that the service running was from another day.
 
 ## L1 — suite, static checks and build
 
+🔴 **Run each one so its exit status is visible, and record it:**
+
 ```bash
-{{CMD_TEST}}
-{{CMD_TYPECHECK}}
-{{CMD_LINT}}
-{{CMD_BUILD}}
+{{CMD_TEST}}; echo "exit=$?"
+{{CMD_TYPECHECK}}; echo "exit=$?"
+{{CMD_LINT}}; echo "exit=$?"
+{{CMD_BUILD}}; echo "exit=$?"
 ```
+
+**`| grep`, `| tail` and grepping a redirected log all report the status of the LAST command in the
+line, not of the suite.** A run printing `5 passed, 2 failed` and exiting 1 comes back as `exit=0`
+through all three. L1 is `exit=0` on every line — a summary line that reads green is not L1.
 
 🔴 **The build is part of L1.** It catches what the suite never catches — in languages with erased
 types, a type error only shows up at build time.

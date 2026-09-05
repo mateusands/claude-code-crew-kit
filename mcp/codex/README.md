@@ -74,8 +74,14 @@ Full policy: [`../../workflows/agent-roles.md`](../../workflows/agent-roles.md).
 **Code review, above all.** Codex has a non-interactive reviewer of its own:
 
 ```bash
-codex review          # runs a review without an interactive session
+codex review < /dev/null      # runs a review without an interactive session
 ```
+
+🔴 **The redirect is required whenever a tool, not a human, is running the command.** `codex exec`
+appends a piped stdin to the prompt, so a call started with an open pipe blocks on `Reading
+additional input from stdin...` — 39 bytes, zero CPU, forever. It closes on its own often enough to
+look intermittent. The MCP server in this kit is immune (`mcp/lib/core.mjs` always ends the child's
+stdin); a hand-rolled `codex` call from a shell is not.
 
 That is the "GPT as review agent" path the `codereview` skill's Step −1 points at. A second
 independent reviewer is worth more than a second implementer: two passes converging on a finding
@@ -84,14 +90,14 @@ raises confidence, and each tool's reviewer has a different blind spot.
 Also useful as a second opinion on a design decision, and as an executor for a bounded task in a
 language it is strong in.
 
-## 🔴 The safety difference from `agy` — read this before delegating writes
+## 🔴 Two layers of containment, and what each one is worth
 
-The `agy` server in this kit is a **wrapper**: it injects a charter and audits git before and after
+Like `agy`, this server is a **wrapper**: it injects the charter and audits git before and after
 every call, so a commit, a push, or a write outside the declared files comes back as an explicit
-violation. **The Codex MCP server is the vendor's own, and this kit adds none of that.**
+violation. It replaced the vendor's own `codex mcp-server`, which has none of that.
 
-What Codex gives you instead is an **OS-level sandbox**, which is a stronger guarantee in a different
-place — it stops writes at the filesystem, not at the prompt:
+On top of it Codex adds an **OS-level sandbox**, a stronger guarantee in a different place — it stops
+writes at the filesystem rather than at the prompt:
 
 | `--sandbox` | Effect |
 |---|---|
@@ -123,3 +129,33 @@ Keep Codex at `read-only` and use it as a **reviewer and second opinion**, and u
 delegated writes — `agy` is the one with the audit wrapper. If you later want the same guarantees for
 Codex writes, the wrapper to copy is [`../agy/server.mjs`](../agy/server.mjs); the charter and the git
 audit are backend-agnostic.
+
+---
+
+## `codex_followup` and the two things that used to break it
+
+Both were measured on codex-cli 0.153.3, and both cost whole rounds before they were understood.
+
+**1. `codex exec resume` does not take the flags `codex exec` takes.** `--sandbox` and `-C` are
+rejected at argument parsing:
+
+```
+error: unexpected argument '--sandbox' found
+```
+
+Every follow-up died there, before reaching the model — including the ones sent to recover a review
+that had already done its work. The server now passes `-c sandbox_mode="…"`, the same setting by its
+`config.toml` name, which `resume` does accept and does enforce: resumed read-only, a requested file
+write is refused; resumed `workspace-write`, the same write lands in the spawned process's cwd, which
+is also how the working directory survives the loss of `-C`.
+
+**2. `--ephemeral` and `codex_followup` cannot both exist.** Ephemeral runs record no rollout, so
+resuming one answers:
+
+```
+Error: thread/resume: thread/resume failed: no rollout found for thread id …
+```
+
+The flag was there to keep delegated calls out of your `codex` session history. That tidiness cost
+the entire follow-up feature, so it is gone: **delegated calls now appear in your session history**,
+which is the price of the `thread_id` this server hands back meaning anything at all.

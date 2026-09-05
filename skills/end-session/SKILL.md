@@ -71,6 +71,16 @@ verified and stops checking.
 > If the project has context shared across repos: update **only** this project's slice. Polluting the
 > neighbors' is a process error. And never record secrets, credentials or real data there.
 
+## 2.5 — did this session make the kit wrong?
+
+```bash
+node .claude/scripts/check-drift.mjs; echo "exit=$?"
+```
+
+You have just edited the source of truth. If you moved a file, changed what is versioned, added a
+script beside a skill, or specialized a document, this is where you find out whether the kit still
+describes the repository. It is cheap, it exits 1, and it is the only check in this kit that does.
+
 ## 3. Final validation
 
 **The suite first** — and report the real result, not the expected one:

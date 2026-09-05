@@ -34,7 +34,13 @@ Read, in this order:
    git status --short && git branch --show-current && git log --oneline -10
    ```
 
-### If `info.md`, `techstack.md` or `operations.md` do not exist, create them now
+### If `info.md`, `language.md`, `techstack.md` or `operations.md` do not exist, create them now
+
+🔴 **Resolve the owner before the first gate.** `info.md` names the project's owner; `.crew-kit-config`
+may set `OWNER`, which overrides it for this working copy; `I_AM_THE_OWNER` says whether that is you.
+State the result in one line — *"owner: X per the project · Y for this copy · I am not them"* — and if
+those lines plainly contradict the flag, **stop and ask** rather than picking a reading. An override
+nobody states is a gate that quietly changed hands.
 
 🔴 **The roster is not in `info.md`.** Read `.crew-kit-config` at the repository root for which agents
 this machine actually reaches; `info.md` holds only the project's authority. If `.crew-kit-config` is
@@ -80,6 +86,21 @@ scaffolding.
 > project's slice**. Loading the neighbors' context pollutes the session — and if that context is a
 > git clone, **confirm it is up to date before reading**: stale context makes you absorb the wrong
 > thing without noticing.
+
+## 1.5 — does the kit still describe this repository?
+
+```bash
+node .claude/scripts/check-drift.mjs; echo "exit=$?"
+```
+
+One command, and it is the only gate here that can fail. It catches the class of defect this skill
+cannot: the sentence in a skill that was true when it was written. A skill claiming a file is
+gitignored after it started being versioned, a link to a file that moved, a placeholder nobody
+filled, a script shipped beside a skill the skill never mentions — none of those break anything, so
+nothing reports them, and they get believed precisely because a skill is where facts are trusted.
+
+**`exit=1` is not a reason to stop working.** It is a reason to fix the document before you act on
+it, and to say in the report that you did.
 
 ## 2. Read only what the task requires
 

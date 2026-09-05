@@ -4,6 +4,13 @@ description: Reviews your own report before delivering — separates what was ve
 
 Before saying "done", rewrite your own report through these filters:
 
+**0. Did you read the exit status, or the output?** For every command you are citing as proof: say the
+number it printed **and** the status it exited with. 🔴 If you learned the result through `| grep`,
+`| tail`, or by grepping a redirected log, **you read the status of `grep`, not of the command** —
+those exit 0 over a failing run, so you have no evidence of a pass. This is the mechanism by which an
+honest agent reports green four times in a row without lying once. Re-run it as
+`<command>; echo "exit=$?"` before the claim stands.
+
 **1. Suite × runtime, kept separate.** Say the two things in different sentences: what the suite covered
 and what you **exercised by hand**, with what data. Never let "the tests pass" do the job of both. If
 you did not actually open/run it, **declare that there is no runtime proof**.
